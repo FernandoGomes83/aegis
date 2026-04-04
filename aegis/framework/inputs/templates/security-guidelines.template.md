@@ -9,7 +9,7 @@ date: [YYYY-MM-DD]
 
 > **IMPORTANT — READ BEFORE EDITING**
 >
-> This document defines **project-specific** security rules. It is **merged with `SECURITY_UNIVERSAL.md`** at SDD generation time, not used in its place.
+> This document defines **project-specific** security rules. It is **merged with `SECURITY_UNIVERSAL.md`** at Aegis generation time, not used in its place.
 >
 > **Merge semantics**:
 > - Rules in this document **add to** the universal baseline. They do not replace it.
