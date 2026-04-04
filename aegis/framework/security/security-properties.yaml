@@ -1,0 +1,204 @@
+# Pre-defined correctness properties auto-injected into every project's design.md.
+# Each property is a formal, verifiable statement that maps 1:1 to a security requirement.
+# Properties use the "For any X..." quantification pattern to enable formal verification
+# and structured testing. The applies_when filter matches the same project characteristics
+# used in security-requirements.yaml.
+
+properties:
+  - id: SEC-PROP-INPUT
+    name: Input validation rejects invalid data
+    applies_when: always
+    validates: SEC-REQ-INPUT-01
+    statement: >
+      For any API request where at least one field violates the declared schema
+      — whether by type mismatch, value outside the permitted range, format
+      violation, or exceeding the payload size limit — the system SHALL return
+      HTTP 400 before executing any business logic, and the response body SHALL
+      identify the offending fields without revealing internal implementation
+      details. For any API request where all fields conform to the schema, the
+      system SHALL not reject the request on input-validation grounds and SHALL
+      proceed to business logic processing. For any two requests that differ
+      only in one field's value, the validation outcome for that field SHALL be
+      deterministic and consistent across all instances of the service. No
+      field value provided in an external request SHALL reach a database query,
+      AI prompt, shell command, or template renderer without first passing
+      schema validation.
+
+  - id: SEC-PROP-IDOR
+    name: Resource access is restricted to the owning authenticated user
+    applies_when: has_authenticated_resources
+    validates: SEC-REQ-IDOR-01
+    statement: >
+      For any authenticated request that supplies a resource identifier, the
+      system SHALL return the resource's data only if the authenticated user's
+      identifier matches the resource's owner field as stored in the
+      authoritative data store; in all other cases the system SHALL return
+      HTTP 404, making an unowned resource indistinguishable from a
+      non-existent one. For any listing endpoint, the set of records returned
+      SHALL be a strict subset of records owned by the authenticated user, and
+      the cardinality of that set SHALL equal the number of records owned by
+      that user — never more. For any write or delete operation, the ownership
+      check SHALL be performed within the same database transaction as the
+      modification so that a concurrent ownership transfer cannot introduce a
+      TOCTOU window. No authorization decision SHALL be delegated to the client
+      or inferred from URL structure alone without a server-side ownership
+      verification.
+
+  - id: SEC-PROP-UPLOAD
+    name: File uploads are validated, sanitized, and stored safely
+    applies_when: has_file_upload
+    validates: SEC-REQ-UPLOAD-01
+    statement: >
+      For any file uploaded to the system, the file SHALL only be accepted if
+      its magic bytes, extension, and successful decoding by a type-appropriate
+      library all agree on a permitted file type; a file that passes extension
+      checking but fails magic byte inspection or decoding SHALL be rejected
+      with HTTP 400 regardless of the Content-Type header supplied by the
+      client. For any accepted file, the stored object name SHALL be a UUID
+      with no relationship to the original filename, the file's EXIF and
+      embedded metadata SHALL be absent from the stored copy, and the file
+      SHALL reside exclusively in external object storage with no publicly
+      guessable URL. For any client request to access an uploaded file, access
+      SHALL be mediated by a time-limited signed URL generated server-side
+      after authorization, and the signed URL SHALL expire within a configured
+      short duration. No uploaded file SHALL be executed, interpreted, or
+      served with a Content-Disposition of inline for types capable of active
+      content rendering.
+
+  - id: SEC-PROP-RATE
+    name: Rate limits are enforced and excess requests are rejected with retry guidance
+    applies_when: has_public_endpoints
+    validates: SEC-REQ-RATE-01
+    statement: >
+      For any sequence of requests from the same IP address (and, when
+      authenticated, the same user identifier) that exceeds the configured
+      limit for an endpoint within the defined time window, every request
+      beyond the limit SHALL receive HTTP 429 Too Many Requests with a
+      Retry-After header whose value accurately reflects the number of seconds
+      remaining in the current window. For any sequence of requests that
+      remains within the limit, the system SHALL not return HTTP 429 on
+      rate-limiting grounds, and requests SHALL be processed normally. Rate
+      limit state SHALL be maintained in a shared distributed store so that
+      the limit is enforced consistently when the application runs across
+      multiple instances or replicas. For any rate limit event, a structured
+      log entry SHALL be written containing the source IP, the user identifier
+      if authenticated, the endpoint path, and the timestamp, enabling
+      retrospective analysis of abuse patterns.
+
+  - id: SEC-PROP-RACE
+    name: Concurrent write operations are serialized without double-processing
+    applies_when: has_write_operations
+    validates: SEC-REQ-RACE-01
+    statement: >
+      For any pair of concurrent requests that attempt the same state
+      transition on the same resource — such as two simultaneous payment
+      captures, balance debits, or status updates — the system SHALL ensure
+      that exactly one request succeeds and the other receives an appropriate
+      conflict or already-processed error, with the final state of the resource
+      reflecting the outcome of exactly one operation. For any background job
+      or webhook event that carries a unique event identifier, the system SHALL
+      process the corresponding business action exactly once even if the event
+      is delivered multiple times, storing the event identifier as an
+      idempotency key in a durable store before executing the action. For any
+      write operation on a financial balance or limited-availability resource,
+      the read of the current state and the write of the new state SHALL occur
+      within a single database transaction at Serializable isolation, and the
+      transaction SHALL abort if the state read at the start of the transaction
+      no longer matches the required precondition at commit time. The system
+      SHALL not expose partially committed state to concurrent readers at any
+      point during a multi-step write operation.
+
+  - id: SEC-PROP-AUTH
+    name: Authentication is rate-limited, non-enumerating, and requires server-side invalidation
+    applies_when: has_authentication
+    validates: SEC-REQ-AUTH-01
+    statement: >
+      For any sequence of authentication attempts originating from the same IP
+      address or targeting the same account that exceeds five failures within
+      a 15-minute window, subsequent attempts SHALL be rejected with a lockout
+      response for the remainder of the window, and the affected account owner
+      SHALL be notified via the registered contact method. For any
+      authentication attempt, the HTTP status code and response body returned
+      on failure SHALL be identical regardless of whether the cause is an
+      unknown account, an incorrect credential, or an unverified account
+      status, so that an attacker cannot distinguish which accounts exist in
+      the system. For any logout action, the server SHALL revoke the session
+      or token in the server-side session store or blocklist so that the
+      credential cannot be reused even if a client retains it; cookie deletion
+      on the client alone SHALL not constitute a complete logout. For any
+      sensitive account operation — including changing the email address,
+      changing the password, or deleting the account — the system SHALL require
+      the user to provide current valid credentials immediately before the
+      operation proceeds, regardless of how recently the user last
+      authenticated.
+
+  - id: SEC-PROP-PRIVACY
+    name: Sensitive data is never logged and errors never expose internals
+    applies_when: has_personal_data
+    validates: SEC-REQ-PRIVACY-01
+    statement: >
+      For any log entry, tracing span, or error report emitted by the system,
+      the entry SHALL not contain passwords, session tokens, API keys, full
+      payment card numbers, or full government-issued identifier numbers in
+      plain text; references to such values SHALL be replaced with opaque
+      identifiers or truncated representations sufficient for debugging without
+      exposing the sensitive value. For any error response returned to an
+      external client, the response SHALL contain only a user-friendly message
+      and an opaque error code or request correlation identifier, and SHALL not
+      include stack traces, database query text, internal service names, or
+      schema details. For any file or data buffer created as intermediate
+      storage during a processing pipeline (e.g., a resized image, a parsed
+      document), the system SHALL delete the intermediate artifact from all
+      storage locations upon completion of the pipeline step that consumes it,
+      and the deletion SHALL be performed in a finally-block or equivalent
+      construct that executes regardless of whether the pipeline step succeeded
+      or failed. No application secret, credential, or private key SHALL appear
+      in source code, configuration files committed to version control, or
+      client-side bundles.
+
+  - id: SEC-PROP-HONEYPOT
+    name: Automated bot submissions are silently absorbed and scanner probes are logged and blocked
+    applies_when: has_public_endpoints
+    validates: SEC-REQ-HONEYPOT-01
+    statement: >
+      For any form submission where the hidden honeypot field contains a
+      non-empty value, the system SHALL return a synthetic success response
+      that is indistinguishable from a legitimate success response to the
+      submitter, SHALL not perform any of the form's intended business logic,
+      and SHALL write a structured log entry recording the source IP, timestamp,
+      form identifier, and the fact that honeypot activation occurred. For any
+      HTTP request received at a designated decoy endpoint, the system SHALL
+      log the source IP, request method, path, and timestamp, SHALL emit a
+      real-time alert to the monitoring system, and SHALL apply a temporary
+      block or elevated scrutiny rule to the source IP for a configurable
+      duration. For any source IP that triggers a honeypot field or a decoy
+      endpoint, subsequent requests from that IP SHALL be subject to additional
+      friction (e.g., stricter rate limits or CAPTCHA challenges) for the
+      duration of the block period, without exposing to the client that it has
+      been flagged. The honeypot detection mechanism SHALL not interfere with
+      any legitimate user interaction, and a human user who never focuses or
+      fills the hidden field SHALL never be affected by the honeypot logic.
+
+  - id: SEC-PROP-TIMING
+    name: Business actions execute only after verified payment and are revoked on refund
+    applies_when: has_payments
+    validates: SEC-REQ-TIMING-01
+    statement: >
+      For any business action whose execution is contingent on a successful
+      payment — including subscription activation, digital content delivery,
+      and entitlement grants — the system SHALL not execute the action until it
+      has received a gateway webhook event confirming payment, verified the
+      webhook's cryptographic signature, confirmed that the event's payment
+      amount matches the server-stored expected amount for the associated order,
+      and confirmed that the event has not been previously processed using a
+      durable idempotency store. For any client-side signal, redirect parameter,
+      or polling request that asserts payment success, the system SHALL not
+      treat that signal as authoritative and SHALL not execute the contingent
+      business action solely on the basis of that signal. For any refund or
+      chargeback event received from the payment gateway and verified via
+      cryptographic signature, the system SHALL revoke or deactivate all
+      entitlements, access tokens, and download URLs associated with the
+      original payment within one processing cycle of receiving the event. For
+      any order record, the expected payment amount SHALL be immutable after
+      checkout initiation and SHALL be read from the server-side store at
+      payment verification time rather than from any client-supplied parameter.

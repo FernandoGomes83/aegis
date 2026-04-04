@@ -1,0 +1,281 @@
+# Pre-defined security requirements auto-injected into every project's requirements.md.
+# NO level field — security is always full rigor, without exception.
+# The ONLY filter is applies_when (project characteristics).
+# applies_when values: always | has_authenticated_resources | has_file_upload |
+#   has_public_endpoints | has_write_operations | has_authentication |
+#   has_personal_data | has_external_urls | has_payments | has_forms
+
+categories:
+  - id: input-validation
+    applies_when: always
+    requirements:
+      - id: SEC-REQ-INPUT-01
+        title: Schema validation on all endpoints
+        criteria: >
+          THE System SHALL validate all API inputs against an explicit schema
+          using a schema validation library (e.g., zod, pydantic, joi) before
+          any business logic is executed. Every field SHALL have a defined type,
+          minimum and maximum length or value, and an expected format or
+          enumeration of allowed values. Requests containing any field that
+          fails validation SHALL be rejected immediately with HTTP 400 and a
+          response body listing the specific fields that failed, without
+          exposing internal implementation details or stack traces. The total
+          request body size SHALL be limited at the middleware level (e.g.,
+          max 1 MB for standard APIs) to prevent denial-of-service via payload
+          flooding.
+
+  - id: idor
+    applies_when: has_authenticated_resources
+    requirements:
+      - id: SEC-REQ-IDOR-01
+        title: Ownership check on every endpoint with ID
+        criteria: >
+          THE System SHALL verify, on every endpoint that receives a resource
+          identifier, that the authenticated user is the owner of or is
+          explicitly authorized to access that resource before returning or
+          modifying any data. Queries SHALL include the authenticated user's
+          identifier as a filter condition so that an unowned resource is
+          indistinguishable from a non-existent one, returning HTTP 404 in both
+          cases to prevent information leakage. Listing endpoints SHALL always
+          filter results by owner and SHALL never return records belonging to
+          other users, even partially. Authorization checks SHALL be performed
+          in the server-side application layer and SHALL NOT be delegated to
+          client-side logic or URL-based access control alone.
+
+  - id: upload
+    applies_when: has_file_upload
+    requirements:
+      - id: SEC-REQ-UPLOAD-01
+        title: Upload validation by magic bytes
+        criteria: >
+          THE System SHALL validate every uploaded file using at least three
+          independent checks: inspection of the file's magic bytes to determine
+          its true type, verification of the file extension as a redundant
+          signal, and an attempt to fully decode and process the file as the
+          expected type (e.g., opening an image with a decoding library) so
+          that disguised malicious payloads are rejected. Files that pass
+          validation SHALL be renamed using a UUID before storage, stripping
+          the original filename entirely to prevent path traversal attacks.
+          All EXIF and embedded metadata SHALL be stripped from image files
+          before storage to protect user privacy, and re-encoding of images
+          is REQUIRED to eliminate hidden payloads. Validated files SHALL be
+          stored exclusively in external object storage (e.g., S3, R2, GCS)
+          with time-limited signed URLs used for access, and SHALL never be
+          served directly from the application server or stored in the
+          application's directory tree.
+
+  - id: rate-limiting
+    applies_when: has_public_endpoints
+    requirements:
+      - id: SEC-REQ-RATE-01
+        title: Rate limiting on public endpoints
+        criteria: >
+          THE System SHALL enforce rate limits on every public-facing endpoint,
+          applying limits appropriate to the endpoint's risk level (e.g., 5
+          login attempts per 15 minutes, 30 requests per minute for public read
+          APIs). Rate limiting SHALL be applied per IP address and, when the
+          user is authenticated, additionally per user identifier, using a
+          distributed store (e.g., Redis) to enforce limits consistently across
+          all application instances. Requests that exceed the configured limit
+          SHALL receive HTTP 429 Too Many Requests with a Retry-After header
+          indicating the number of seconds the client must wait before retrying.
+          Rate limit counters and hit events SHALL be logged for monitoring and
+          anomaly detection purposes.
+
+  - id: race-conditions
+    applies_when: has_write_operations
+    requirements:
+      - id: SEC-REQ-RACE-01
+        title: Transactions for critical write operations
+        criteria: >
+          THE System SHALL wrap all write operations that involve shared mutable
+          state — including balance updates, status transitions, inventory
+          changes, and resource creation with uniqueness constraints — in
+          database transactions with an appropriate isolation level, using
+          Serializable isolation for financial and payment-critical operations.
+          Optimistic locking (version fields) or pessimistic locking
+          (SELECT FOR UPDATE) SHALL be applied based on contention expectations
+          to prevent lost updates and double-processing. Every background job
+          and webhook handler SHALL use an idempotency key derived from the
+          event's unique identifier so that duplicate deliveries execute the
+          operation exactly once and subsequent deliveries are safely ignored.
+          The System SHALL verify the current state of a resource at the
+          beginning of each transaction and abort with an appropriate error if
+          the state is not the expected precondition, preventing race conditions
+          between concurrent requests.
+
+  - id: auth
+    applies_when: has_authentication
+    requirements:
+      - id: SEC-REQ-AUTH-01
+        title: Authentication security
+        criteria: >
+          THE System SHALL enforce a rate limit of no more than 5 failed
+          authentication attempts per 15-minute window per IP address and per
+          account, applying a temporary lockout after the threshold is exceeded
+          and alerting the account owner via email when a lockout occurs.
+          All authentication failure responses — whether the cause is an
+          unknown email address, an incorrect password, or an unverified
+          account — SHALL return identical HTTP status codes and identical
+          response body messages to prevent user enumeration attacks.
+          Session invalidation SHALL be performed server-side upon logout,
+          ensuring that the session or token is revoked in the server's
+          session store or token blocklist and cannot be reused even if the
+          client retains the credential. The System SHALL require
+          re-authentication before allowing sensitive account changes, including
+          email address updates, password changes, and account deletion.
+
+  - id: headers
+    applies_when: always
+    requirements:
+      - id: SEC-REQ-HEADERS-01
+        title: Security headers on all responses
+        criteria: >
+          THE System SHALL include the following HTTP security headers on every
+          response: Strict-Transport-Security with a max-age of at least
+          63,072,000 seconds and includeSubDomains to prevent protocol
+          downgrade attacks; X-Frame-Options set to SAMEORIGIN to prevent
+          clickjacking; X-Content-Type-Options set to nosniff to prevent MIME
+          sniffing; Referrer-Policy set to origin-when-cross-origin to limit
+          referrer information leakage; and Permissions-Policy restricting
+          access to camera, microphone, and geolocation to none by default.
+          A Content-Security-Policy header SHALL be configured beginning with
+          default-src 'self', with additional source allowances documented and
+          justified, and unsafe-inline for scripts SHALL be avoided in
+          production in favor of nonces or hashes. CORS headers SHALL
+          explicitly enumerate permitted origins and SHALL NOT use the wildcard
+          Access-Control-Allow-Origin value on any endpoint that accepts
+          authenticated requests or returns user-specific data.
+
+  - id: data-privacy
+    applies_when: has_personal_data
+    requirements:
+      - id: SEC-REQ-PRIVACY-01
+        title: Sensitive data protection
+        criteria: >
+          THE System SHALL never write passwords, session tokens, API keys,
+          payment card data, or full personal identifiers to application logs,
+          tracing spans, or error reporting tools; log entries that reference
+          such data SHALL include only opaque identifiers (e.g., hashed user
+          IDs, last-four digits of a card) sufficient for debugging without
+          exposing the sensitive value. All error responses returned to clients
+          SHALL use generic, user-facing messages that do not reveal internal
+          implementation details, stack traces, database schema, or the
+          specific validation rule that was violated. Temporary data created
+          during processing — including uploaded files used as input to
+          generation or transformation pipelines — SHALL be deleted from all
+          storage locations immediately after the processing step completes,
+          and the deletion SHALL be verified. Application secrets, database
+          credentials, and third-party API keys SHALL be stored exclusively in
+          environment variables or a secret manager and SHALL never be
+          hard-coded in source files or committed to version control.
+
+  - id: honeypots
+    applies_when: has_public_endpoints
+    requirements:
+      - id: SEC-REQ-HONEYPOT-01
+        title: Honeypot defenses
+        criteria: >
+          THE System SHALL include at least one hidden honeypot field in every
+          HTML form rendered to the public, positioned off-screen using CSS
+          so that it is invisible and unfocusable by human users; any submission
+          where this field is non-empty SHALL be treated as automated bot
+          activity, rejected silently with a synthetic HTTP 200 response that
+          appears legitimate to the submitter, and logged for analysis without
+          revealing detection to the sender. THE System SHALL expose a set of
+          decoy endpoints that mimic paths commonly targeted by automated
+          scanners (e.g., /wp-admin/, /.env, /api/admin/users); every request
+          to these endpoints SHALL be logged with the source IP, timestamp, and
+          request details, and SHALL trigger an automated alert in the
+          monitoring system. Source IPs that trigger honeypot endpoints SHALL
+          be subjected to temporary blocks or elevated scrutiny on all
+          subsequent requests for a configurable duration.
+
+  - id: urls
+    applies_when: has_external_urls
+    requirements:
+      - id: SEC-REQ-URL-01
+        title: URL allowlist for external resources
+        criteria: >
+          THE System SHALL maintain an explicit allowlist of permitted external
+          hostnames and SHALL reject any user-supplied URL whose hostname does
+          not appear on the allowlist before performing any server-side
+          network request, preventing Server-Side Request Forgery (SSRF)
+          attacks. Server-side HTTP requests to external resources SHALL be
+          subject to a connection and read timeout of no more than 5 seconds
+          and a maximum response size limit, and redirects SHALL only be
+          followed when the redirect destination also passes the allowlist
+          check. The System SHALL block all requests whose resolved IP address
+          falls within private, loopback, or link-local ranges (including
+          127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, and
+          169.254.0.0/16) to prevent access to internal infrastructure. User-
+          supplied URLs SHALL never be used as filesystem paths, template
+          includes, or redirect targets without allowlist validation, and open
+          redirects to arbitrary external domains SHALL be treated as a
+          critical security defect.
+
+  - id: business-timing
+    applies_when: has_payments
+    requirements:
+      - id: SEC-REQ-TIMING-01
+        title: Action only after payment confirmation
+        criteria: >
+          THE System SHALL execute any business action dependent on a successful
+          payment — including activating subscriptions, delivering digital goods,
+          and granting entitlements — only after receiving and cryptographically
+          verifying a confirmation webhook from the payment gateway, and SHALL
+          never rely on client-side signals or redirect parameters to determine
+          payment status. The expected payment amount SHALL be validated
+          server-side against the order record stored at checkout initiation
+          time, and any discrepancy between the confirmed amount and the
+          expected amount SHALL cause the transaction to be rejected and flagged
+          for manual review. The System SHALL process each payment gateway
+          webhook event at most once by storing processed event IDs and
+          checking for duplicates before executing any state change, using a
+          database transaction to ensure atomicity of the idempotency check and
+          the state change. Access tokens, download URLs, and entitlements
+          granted upon payment SHALL be revoked or deactivated immediately upon
+          receipt and verification of a refund or chargeback event from the
+          gateway.
+
+  - id: csrf
+    applies_when: has_forms
+    requirements:
+      - id: SEC-REQ-CSRF-01
+        title: CSRF protection on state-changing forms
+        criteria: >
+          THE System SHALL generate a unique, unpredictable, per-session CSRF
+          token and include it in every HTML form that performs a state-changing
+          operation (POST, PUT, PATCH, DELETE). The server SHALL validate the
+          CSRF token on every state-changing request before executing any
+          business logic, rejecting requests with missing or invalid tokens with
+          HTTP 403 Forbidden. CSRF tokens SHALL be stored server-side (in the
+          session or a signed cookie) and SHALL NOT be derived solely from
+          information available in the request, such as the user ID or a
+          predictable timestamp. API endpoints that accept JSON and use
+          cookie-based authentication SHALL additionally enforce SameSite=Strict
+          or SameSite=Lax on session cookies as a defense-in-depth measure
+          alongside explicit CSRF token validation.
+
+  - id: dependencies
+    applies_when: always
+    requirements:
+      - id: SEC-REQ-DEPS-01
+        title: Dependency security
+        criteria: >
+          THE System's dependency lockfile (e.g., package-lock.json,
+          poetry.lock, Cargo.lock) SHALL be committed to version control and
+          kept up to date so that all dependency resolutions are reproducible
+          and auditable. Automated dependency vulnerability scanning (e.g.,
+          npm audit, pip audit, Dependabot, Snyk) SHALL be executed on every
+          CI pipeline run, and builds with known critical or high-severity
+          vulnerabilities in direct or transitive dependencies SHALL fail until
+          the vulnerability is remediated or explicitly accepted with a
+          documented justification. All application secrets, database
+          credentials, and third-party API keys SHALL be stored in environment
+          variables or a dedicated secret manager and SHALL never be
+          hard-coded in source files or committed to version control, with
+          separate secret values maintained for development, staging, and
+          production environments. Dependency updates for security patches SHALL
+          be applied within 7 days of disclosure for critical vulnerabilities
+          and within 30 days for high-severity vulnerabilities.
