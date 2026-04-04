@@ -1,0 +1,48 @@
+artifact_titles:
+  requirements: "Documento de Requisitos"
+  design: "Design Técnico"
+  tasks: "Plano de Implementação"
+  tests: "Especificação de Testes"
+
+section_titles:
+  introduction: "Introdução"
+  glossary: "Glossário"
+  requirements: "Requisitos"
+  security_requirements: "Requisitos de Segurança"
+  overview: "Visão Geral"
+  architecture: "Arquitetura"
+  components: "Componentes"
+  data_models: "Modelos de Dados"
+  correctness_properties: "Propriedades de Corretude"
+  error_handling: "Tratamento de Erros"
+  test_strategy: "Estratégia de Testes"
+  pre_implementation_tests: "Testes Pré-Implementação"
+  per_task_tests: "Testes por Tarefa"
+  property_based_tests: "Testes Baseados em Propriedades"
+  e2e_tests: "Testes de Ponta a Ponta"
+  integration_tests: "Testes de Integração"
+
+labels:
+  user_story: "História de Usuário"
+  derives_from: "Derivado de"
+  implements: "Implementa"
+  validates: "Valida"
+  tests: "Testa"
+  acceptance_criteria: "Critérios de Aceitação"
+  checkpoint: "Ponto de Verificação"
+
+status:
+  covered: "Coberto"
+  partial: "Parcial"
+  uncovered: "Não Coberto"
+  pass: "Passou"
+  fail: "Falhou"
+  na: "N/A"
+  needs_review: "Requer Revisão"
+  not_generated: "Não Gerado"
+
+messages:
+  security_note: "Esta seção foi revisada automaticamente quanto a implicações de segurança; recomenda-se revisão manual em contextos sensíveis."
+  auto_generated: "Este artefato foi gerado automaticamente pelo framework SDD e deve ser revisado antes do uso."
+  validation_light: "A validação passou com avisos menores; todos os requisitos estão cobertos, mas alguns itens podem precisar de mais esclarecimento."
+  validation_gaps: "A validação identificou lacunas na cobertura; revise os requisitos não cobertos e resolva-os antes de prosseguir."
