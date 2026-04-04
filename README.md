@@ -29,6 +29,18 @@ You choose the formalism level (light, standard, formal) for your docs. Security
 npx aegis-sdd
 ```
 
+The installer asks where to install:
+
+- **Global** (`~/.claude/plugins/aegis/`) — available in all your projects
+- **Local** (`.claude/plugins/aegis/`) — this project only
+
+Or skip the prompt with flags:
+
+```bash
+npx aegis-sdd --global    # all projects
+npx aegis-sdd --local     # current project only
+```
+
 Requires [Claude Code](https://claude.ai/claude-code) installed.
 
 ## Usage
