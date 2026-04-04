@@ -1,6 +1,6 @@
 {
   "name": "aegis-sdd",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Aegis — Secure Software Design Documents framework for Claude Code",
   "bin": {
     "aegis-sdd": "./bin/install.mjs"
