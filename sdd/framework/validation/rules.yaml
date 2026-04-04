@@ -1,0 +1,399 @@
+# SDD Framework — Validation Rules
+# Version 1.0 — 2026-04-04
+#
+# This file is the machine-readable definition of all validation rules used by:
+#   - Light validation: runs automatically after each artifact is generated
+#   - Full validation: runs on demand via `/sdd validate`
+#
+# Severity values:
+#   error   — blocks advancement; the artifact is considered invalid until the check passes
+#   warning — does not block; surfaced as a gap in the validation report
+#
+# check values are symbolic IDs consumed by the validation agent (validation-agent.md).
+# Each check maps to a parsing/analysis routine in the agent implementation.
+
+# ---------------------------------------------------------------------------
+# LIGHT VALIDATION
+# Runs automatically after each artifact is generated.
+# Fast checks — parse a single file, resolve IDs, verify structural invariants.
+# ---------------------------------------------------------------------------
+
+light_validation:
+
+  # -------------------------------------------------------------------------
+  # Checks that run immediately after requirements.md is generated
+  # -------------------------------------------------------------------------
+  after_requirements:
+
+    - id: VAL-REQ-01
+      check: every_input_doc_has_derived_req
+      description: >
+        Every input document listed in sdd.config.yaml (or auto-detected in
+        sdd/inputs/) must have at least one REQ-NNN or SEC-REQ-* entry whose
+        text includes a "Derives from: <input-doc-name>" citation. This ensures
+        that no input document was silently ignored during requirements
+        generation and that the agent has traceable coverage of all provided
+        source material.
+      severity: warning
+      applies_to: requirements.md
+
+    - id: VAL-REQ-02
+      check: security_requirements_injected
+      description: >
+        The requirements.md file must contain a dedicated SEC-REQ-* section
+        with a minimum of five security requirement entries. The following
+        SEC-REQ-* keys are unconditionally required regardless of project type
+        or formalism level: SEC-REQ-IDOR, SEC-REQ-INPUT-VALIDATION,
+        SEC-REQ-RATELIMIT, SEC-REQ-AUTH, SEC-REQ-SECRETS. Additional SEC-REQ-*
+        entries may be injected based on project features detected in input
+        documents (e.g., SEC-REQ-UPLOAD for file upload features,
+        SEC-REQ-PAYMENT for payment flows). Failure to meet the minimum count
+        or absence of any mandatory key is a blocking error.
+      severity: error
+      applies_to: requirements.md
+
+    - id: VAL-REQ-03
+      check: no_duplicate_req_ids
+      description: >
+        All REQ-NNN and SEC-REQ-* identifiers within requirements.md must be
+        unique. Duplicate IDs cause ambiguous cross-references in downstream
+        artifacts and make bidirectional traceability unreliable. The validator
+        collects all IDs, detects collisions, and reports each duplicate with
+        its line number.
+      severity: error
+      applies_to: requirements.md
+
+    - id: VAL-REQ-04
+      check: acceptance_criteria_present
+      description: >
+        For Standard and Formal formalism levels, every REQ-NNN entry must
+        include at least one acceptance criterion written in SHALL/WHEN/THEN
+        syntax. Requirements that are plain prose descriptions without
+        verifiable criteria cannot be tested and create coverage gaps. This
+        check does not apply to Light level, where user stories without
+        acceptance criteria are permitted.
+      severity: warning
+      applies_to: requirements.md
+      level_gate: [standard, formal]
+
+    - id: VAL-REQ-05
+      check: glossary_section_present
+      description: >
+        For Standard and Formal formalism levels, requirements.md must contain
+        a Glossary section defining key domain terms. The absence of a glossary
+        increases the risk of ambiguous interpretation between stakeholders and
+        implementers. This check does not apply to Light level.
+      severity: warning
+      applies_to: requirements.md
+      level_gate: [standard, formal]
+
+  # -------------------------------------------------------------------------
+  # Checks that run immediately after design.md is generated
+  # -------------------------------------------------------------------------
+  after_design:
+
+    - id: VAL-DES-01
+      check: every_req_has_component
+      description: >
+        Every REQ-NNN in requirements.md must be referenced by at least one
+        PROP-NNN in design.md via a "Derives from: REQ-NNN" link. A requirement
+        with no corresponding design property is a design gap — the system has
+        no documented strategy for satisfying that requirement. This check
+        produces a list of unaddressed REQ-NNN entries to guide the designer.
+      severity: warning
+      applies_to: design.md
+
+    - id: VAL-DES-02
+      check: every_prop_refs_valid_reqs
+      description: >
+        Every PROP-NNN and SEC-PROP-* entry in design.md must include a
+        "Derives from:" field referencing at least one valid REQ-NNN or
+        SEC-REQ-* ID. The referenced IDs must exist in requirements.md. Broken
+        references — properties that point to IDs not found in requirements.md
+        — are blocking errors because they indicate either a typo or an
+        undocumented requirement. The validator resolves each reference and
+        reports any that cannot be matched.
+      severity: error
+      applies_to: design.md
+
+    - id: VAL-DES-03
+      check: security_properties_injected
+      description: >
+        The design.md file must contain a dedicated SEC-PROP-* section. Each
+        SEC-PROP-* entry must have a "Derives from: SEC-REQ-*" reference
+        pointing to an entry that exists in requirements.md. There must be a
+        SEC-PROP-* for every SEC-REQ-* present in requirements.md — no
+        security requirement may be left without a design-level response. The
+        absence of the SEC-PROP section or any missing SEC-PROP/SEC-REQ
+        pairing is a blocking error.
+      severity: error
+      applies_to: design.md
+
+    - id: VAL-DES-04
+      check: no_duplicate_prop_ids
+      description: >
+        All PROP-NNN and SEC-PROP-* identifiers within design.md must be
+        unique. Duplicate property IDs produce ambiguous "Implements:" references
+        in tasks.md and undefined "Tests:" references in tests.md, breaking
+        bidirectional traceability throughout the artifact chain.
+      severity: error
+      applies_to: design.md
+
+    - id: VAL-DES-05
+      check: architecture_section_present
+      description: >
+        For Standard and Formal formalism levels, design.md must contain an
+        Architecture section with at least one component diagram, sequence
+        diagram, or data-flow description. At the Formal level, at least one
+        Architecture Decision Record (ADR) is also required per major
+        technology choice. This check does not apply to the Light level.
+      severity: warning
+      applies_to: design.md
+      level_gate: [standard, formal]
+
+  # -------------------------------------------------------------------------
+  # Checks that run immediately after tasks.md is generated
+  # -------------------------------------------------------------------------
+  after_tasks:
+
+    - id: VAL-TASK-01
+      check: every_task_refs_req_or_prop
+      description: >
+        Every TASK-NNN entry in tasks.md must include an "Implements:" field
+        referencing at least one PROP-NNN, SEC-PROP-*, REQ-NNN, or SEC-REQ-*
+        ID. A task with no traceability link cannot be justified against the
+        design and creates audit gaps. All referenced IDs must exist in either
+        design.md or requirements.md. Tasks with broken or absent "Implements:"
+        references are flagged with their line numbers.
+      severity: warning
+      applies_to: tasks.md
+
+    - id: VAL-TASK-02
+      check: every_req_has_task
+      description: >
+        Every REQ-NNN in requirements.md should have at least one TASK-NNN
+        that traces back to it — either directly via "Implements: REQ-NNN" or
+        indirectly through a PROP-NNN that "Derives from: REQ-NNN". Requirements
+        with no implementation tasks represent design intent that has not been
+        translated into actionable work. The validator builds the forward-trace
+        chain and lists all REQ-NNN entries with no reachable task.
+      severity: warning
+      applies_to: tasks.md
+
+    - id: VAL-TASK-03
+      check: no_duplicate_task_ids
+      description: >
+        All TASK-NNN identifiers within tasks.md must be unique. Duplicate
+        task IDs create ambiguity in dependency ordering, effort estimation
+        rollups, and progress tracking.
+      severity: error
+      applies_to: tasks.md
+
+    - id: VAL-TASK-04
+      check: dependency_order_acyclic
+      description: >
+        The "Depends on:" chains in tasks.md must not contain circular
+        dependencies. A cycle (e.g., TASK-003 depends on TASK-007 which depends
+        on TASK-003) makes the task list unexecutable. The validator performs a
+        depth-first traversal of the dependency graph and reports any detected
+        cycles with the full cycle path.
+      severity: error
+      applies_to: tasks.md
+
+    - id: VAL-TASK-05
+      check: estimates_present
+      description: >
+        For Standard and Formal formalism levels, every TASK-NNN must include
+        an estimate. Standard level accepts T-shirt sizes (S/M/L/XL) or numeric
+        estimates (hours or story points). Formal level requires numeric
+        estimates and, ideally, PERT-style risk-adjusted values. Tasks without
+        estimates prevent effort rollup and milestone planning. This check does
+        not apply to Light level.
+      severity: warning
+      applies_to: tasks.md
+      level_gate: [standard, formal]
+
+  # -------------------------------------------------------------------------
+  # Checks that run immediately after tests.md is generated
+  # -------------------------------------------------------------------------
+  after_tests:
+
+    - id: VAL-TEST-01
+      check: every_prop_has_test
+      description: >
+        Every PROP-NNN in design.md must have at least one TEST-PROP-NNN in
+        tests.md with a matching "Tests: PROP-NNN" reference. Design properties
+        with no verification path cannot be declared complete. The validator
+        cross-references all PROP-NNN entries against TEST-PROP-* entries and
+        reports properties with no corresponding test as coverage gaps.
+      severity: error
+      applies_to: tests.md
+
+    - id: VAL-TEST-02
+      check: every_sec_req_has_test
+      description: >
+        Every SEC-REQ-* in requirements.md must have at least one TEST-SEC-*
+        in tests.md whose "Tests:" field references the corresponding
+        SEC-PROP-* or SEC-REQ-* entry. Security requirements without tests
+        cannot be verified and represent unacceptable audit gaps. The validator
+        resolves the SEC-REQ → SEC-PROP → TEST-SEC chain and flags any
+        security requirement that is not reachable from a test.
+      severity: error
+      applies_to: tests.md
+
+    - id: VAL-TEST-03
+      check: security_tests_present
+      description: >
+        The tests.md file must contain a dedicated TEST-SEC-* section. Every
+        SEC-PROP-* entry in design.md must have a corresponding TEST-SEC-*
+        entry with a "Tests: SEC-PROP-*" reference. Additionally, tests.md
+        must reference the SECURITY_UNIVERSAL §14 checklist (Checklist de
+        Segurança por Feature) as the minimum verification bar for each
+        feature block. The absence of the TEST-SEC section, any missing
+        TEST-SEC/SEC-PROP pairing, or the absence of the §14 checklist
+        reference are all blocking errors.
+      severity: error
+      applies_to: tests.md
+
+    - id: VAL-TEST-04
+      check: no_duplicate_test_ids
+      description: >
+        All TEST-REQ-NNN, TEST-PROP-NNN, and TEST-SEC-* identifiers within
+        tests.md must be unique. Duplicate test IDs make test result reporting
+        ambiguous and can cause CI tooling to miscount pass/fail status.
+      severity: error
+      applies_to: tests.md
+
+    - id: VAL-TEST-05
+      check: every_test_refs_valid_id
+      description: >
+        Every "Tests:" reference in tests.md must point to an ID that exists
+        in either design.md (PROP-NNN, SEC-PROP-*) or requirements.md
+        (REQ-NNN, SEC-REQ-*). Tests with broken references cannot be mapped
+        to the coverage matrix and are treated as orphan tests. The validator
+        resolves each "Tests:" value and reports unresolvable references with
+        their line numbers.
+      severity: error
+      applies_to: tests.md
+
+# ---------------------------------------------------------------------------
+# FULL VALIDATION
+# Triggered on demand via `/sdd validate`.
+# Runs all light checks plus cross-artifact analysis.
+# Output is written to docs/sdd/reports/validation-YYYY-MM-DD.md
+# ---------------------------------------------------------------------------
+
+full_validation:
+
+  # -------------------------------------------------------------------------
+  # Coverage Matrix
+  # Cross-artifact table: REQ × Component (PROP) × Task × Test
+  # -------------------------------------------------------------------------
+  coverage_matrix:
+
+    - id: VAL-FULL-01
+      check: generate_coverage_matrix
+      description: >
+        Generate the full REQ × Component × PROP × TASK × TEST coverage matrix.
+        For every REQ-NNN and SEC-REQ-* in requirements.md, the matrix shows:
+        (1) whether at least one PROP-NNN or SEC-PROP-* derives from it,
+        (2) which component in design.md owns that property,
+        (3) whether at least one TASK-NNN implements the property,
+        (4) whether at least one TEST-* validates the property or requirement.
+        Each cell is marked COVERED, PARTIAL, or UNCOVERED according to the
+        rules defined in coverage-matrix.md. The matrix is written as a
+        Markdown table in the validation report. A summary line reports the
+        overall coverage percentage: (COVERED rows / total rows) × 100.
+      severity: error
+      output: coverage_matrix_table
+
+  # -------------------------------------------------------------------------
+  # Security Audit
+  # Cross-reference against SECURITY_UNIVERSAL §14 checklist
+  # -------------------------------------------------------------------------
+  security_audit:
+
+    - id: VAL-FULL-02
+      check: cross_ref_security_universal_checklist
+      description: >
+        Audit the complete security posture of the project against the
+        SECURITY_UNIVERSAL §14 checklist (Checklist de Segurança por Feature).
+        The checklist covers seven categories: Input e dados, Autorização,
+        Proteção, Dados, Upload (if applicable), URLs e recursos externos (if
+        applicable), and Infraestrutura. For each checklist item, the validator
+        determines whether a corresponding SEC-REQ-* or SEC-PROP-* exists and
+        whether a TEST-SEC-* validates it. Each item is assigned a status of
+        PASS (covered end-to-end), FAIL (missing requirement, property, or
+        test), or N/A (not applicable to this project type based on features
+        declared in sdd.config.yaml). The audit result is written as a
+        structured table in the validation report. Any FAIL status in a
+        mandatory category is a blocking error.
+      severity: error
+      output: security_audit_table
+
+  # -------------------------------------------------------------------------
+  # Gaps Report
+  # Broken references and orphan IDs across all artifacts
+  # -------------------------------------------------------------------------
+  gaps:
+
+    - id: VAL-FULL-03
+      check: find_broken_references
+      description: >
+        Scan all four artifacts for every cross-reference keyword ("Derives
+        from:", "Implements:", "Validates:", "Tests:") and verify that the
+        referenced ID exists in the expected artifact. Report each broken
+        reference with: the source artifact, the ID of the containing entry,
+        the expected target artifact, the missing ID, and a suggested fix
+        (e.g., "REQ-015 not found in requirements.md — check for typo or
+        create a matching requirement"). Broken references are sorted by
+        artifact, then by severity (references to missing security IDs are
+        reported first).
+      severity: error
+      output: broken_references_list
+
+    - id: VAL-FULL-04
+      check: find_orphan_ids
+      description: >
+        Identify IDs in any artifact that are never referenced by any other
+        artifact. An orphan ID indicates either dead content (a requirement
+        that was never designed, a property that was never implemented or
+        tested) or a labeling error (a requirement listed under the wrong ID
+        in downstream artifacts). The validator reports: orphan REQ-NNN entries
+        in requirements.md (never referenced by any PROP), orphan PROP-NNN
+        entries in design.md (never referenced by any TASK or TEST), orphan
+        TASK-NNN entries in tasks.md (never referenced by any dependency or
+        milestone), and orphan TEST-* entries in tests.md (never referenced by
+        a "Tests:" cross-reference from any property). Orphan IDs in security
+        namespaces (SEC-REQ-*, SEC-PROP-*, TEST-SEC-*) are always errors;
+        orphan functional IDs are warnings.
+      severity: warning
+      output: orphan_ids_list
+
+  # -------------------------------------------------------------------------
+  # Stats
+  # Summary counts and coverage percentage
+  # -------------------------------------------------------------------------
+  stats:
+
+    - id: VAL-FULL-05
+      check: calculate_coverage_stats
+      description: >
+        Calculate and report the following project statistics:
+        (1) Requirements — total REQ-NNN count, total SEC-REQ-* count,
+            percentage of REQ-NNN entries with a full forward trace
+            (REQ → PROP → TASK → TEST).
+        (2) Design — total PROP-NNN count, total SEC-PROP-* count, percentage
+            of PROP-NNN entries with at least one test.
+        (3) Tasks — total TASK-NNN count, total estimated effort if estimates
+            are present (summed numeric values or T-shirt size distribution).
+        (4) Tests — total TEST-* count, security test count (TEST-SEC-*),
+            percentage of TEST-* entries that trace to a valid PROP or REQ.
+        (5) Overall coverage percentage — (requirements with full forward
+            trace / total requirements) × 100, rounded to one decimal place.
+        (6) Formalism level in use and whether the project meets the minimum
+            artifact completeness bar for that level.
+        Stats are written as a summary block at the top of the validation
+        report before the detailed sections.
+      severity: info
+      output: stats_block
