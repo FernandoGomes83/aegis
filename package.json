@@ -1,0 +1,29 @@
+{
+  "name": "aegis-sdd",
+  "version": "1.0.0",
+  "description": "Aegis — Secure Software Design Documents framework for Claude Code",
+  "bin": {
+    "aegis-sdd": "./bin/install.mjs"
+  },
+  "keywords": [
+    "claude-code",
+    "skill",
+    "sdd",
+    "software-design",
+    "security",
+    "requirements",
+    "tdd",
+    "documentation"
+  ],
+  "author": "Fernando de Carvalho Gomes",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FernandoGomes83/aegis.git"
+  },
+  "files": [
+    "aegis/**",
+    "bin/**"
+  ],
+  "type": "module"
+}
