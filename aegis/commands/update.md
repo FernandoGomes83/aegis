@@ -5,12 +5,15 @@ description: Update an artifact and check downstream impact
 
 ## Bootstrap
 
-Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+Resolve the Aegis framework root path (**AEGIS_HOME**) by running one Bash command:
 
-1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
-2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
-3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
-4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+```bash
+for d in "<project_root>/.claude/aegis" "$HOME/.claude/aegis"; do [ -x "$d/scripts/aegis-bootstrap.sh" ] && exec bash "$d/scripts/aegis-bootstrap.sh" "<project_root>" resolve; done; echo "ERROR=not_found"
+```
+
+Parse the output:
+- If `ERROR=not_found` → tell the user to install Aegis with `npx aegis-sdd` and stop.
+- Otherwise, extract **AEGIS_HOME** from the `AEGIS_HOME=<path>` line.
 
 Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
 

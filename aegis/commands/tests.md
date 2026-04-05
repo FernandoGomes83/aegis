@@ -5,12 +5,15 @@ description: Generate tests.md spec + RED test files
 
 ## Bootstrap
 
-Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+Resolve the Aegis framework root path (**AEGIS_HOME**) by running one Bash command:
 
-1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
-2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
-3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
-4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+```bash
+for d in "<project_root>/.claude/aegis" "$HOME/.claude/aegis"; do [ -x "$d/scripts/aegis-bootstrap.sh" ] && exec bash "$d/scripts/aegis-bootstrap.sh" "<project_root>" resolve; done; echo "ERROR=not_found"
+```
+
+Parse the output:
+- If `ERROR=not_found` → tell the user to install Aegis with `npx aegis-sdd` and stop.
+- Otherwise, extract **AEGIS_HOME** from the `AEGIS_HOME=<path>` line.
 
 Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
 
@@ -65,6 +68,22 @@ Read and parse every artifact in order. Extract the following:
 - Mark any REQ-NNN whose acceptance criteria contain conditional branches
   (WHEN/IF/UNLESS) — these require multiple E2E scenarios, one per branch
 
+### Step 1.5 — Fetch Test Framework Documentation (Context7) [Optional]
+
+Read and execute the procedure defined in `{AEGIS_HOME}/shared/context7-lookup.md`.
+
+Inputs:
+- `stack_config`: loaded from Step 1 (focus on `test_framework` and `property_testing` values)
+- `topic`: `"testing utilities, test configuration, mocking patterns, assertion API, property-based testing"`
+
+This step produces a `documentation_context` string with up-to-date docs for
+the test framework and property-testing library. This helps generate RED test
+files with correct imports, assertion syntax, and configuration for the current
+version of the test tools.
+
+This step is **non-blocking** and **optional**. If Context7 and WebSearch both
+fail, proceed without documentation context.
+
 ### From `design.md`
 
 - All **PROP-NNN** IDs with their behavioral statements
@@ -116,6 +135,9 @@ Use this mapping table to determine the test type and timing for each source ID:
 
 Dispatch to `aegis/agents/tests-agent.md` with the full parsed context from
 Step 1 and the test map from Step 2.
+
+Pass the following additional context to the agent:
+- **documentation_context**: compiled documentation snippets from Step 1.5 (may be empty if lookup was unavailable). When non-empty, use it as the source of truth for test framework imports, assertion syntax, configuration patterns, and mocking utilities.
 
 The agent writes `tests.md` (path: `{output.dir}/tests.md`) using the
 template for the configured formalism level:
@@ -334,16 +356,15 @@ Step 6. Provide specific fix instructions for each failure.
 
 Run the test suite to confirm all generated tests are in the RED (failing) state.
 
+Run via the Bash tool:
+
 ```bash
-# The exact command depends on the configured test_framework.
-# Examples:
-#   vitest run tests/
-#   pytest tests/
-#   go test ./tests/...
-#   bundle exec rspec tests/
+bash "{AEGIS_HOME}/scripts/aegis-run-tests.sh" "<test_framework>" "<test_dir>"
 ```
 
-Parse the test runner output and confirm:
+Where `<test_framework>` is the value from `stack.test_framework` in config (e.g., `vitest`, `pytest`, `go`, `rspec`, `jest`, `mocha`) and `<test_dir>` is the test output directory.
+
+Parse the raw test output above the `---AEGIS_TEST_SUMMARY---` delimiter. Check the `EXIT_CODE` value in the summary and confirm:
 
 1. **Every generated test fails.** A test that passes on an empty codebase is
    broken — it is not testing anything real. Report it as an error.

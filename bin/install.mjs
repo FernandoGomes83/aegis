@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, cpSync, rmSync } from "fs";
+import { existsSync, mkdirSync, cpSync, rmSync, chmodSync, readdirSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { fileURLToPath } from "url";
@@ -117,10 +117,20 @@ for (const cmd of subCommands) {
 
 // Install framework + shared + agents (no longer install commands/ to aegis/)
 mkdirSync(frameworkDir, { recursive: true });
-for (const dir of ["framework", "shared", "agents"]) {
+for (const dir of ["framework", "shared", "agents", "scripts"]) {
   const src = join(source, dir);
   if (existsSync(src)) {
     cpSync(src, join(frameworkDir, dir), { recursive: true });
+  }
+}
+
+// Make shell scripts executable
+const scriptsDir = join(frameworkDir, "scripts");
+if (existsSync(scriptsDir)) {
+  for (const file of readdirSync(scriptsDir)) {
+    if (file.endsWith(".sh")) {
+      chmodSync(join(scriptsDir, file), 0o755);
+    }
   }
 }
 

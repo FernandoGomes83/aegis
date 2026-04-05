@@ -5,12 +5,15 @@ description: Generate design.md from requirements
 
 ## Bootstrap
 
-Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+Resolve the Aegis framework root path (**AEGIS_HOME**) by running one Bash command:
 
-1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
-2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
-3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
-4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+```bash
+for d in "<project_root>/.claude/aegis" "$HOME/.claude/aegis"; do [ -x "$d/scripts/aegis-bootstrap.sh" ] && exec bash "$d/scripts/aegis-bootstrap.sh" "<project_root>" resolve; done; echo "ERROR=not_found"
+```
+
+Parse the output:
+- If `ERROR=not_found` → tell the user to install Aegis with `npx aegis-sdd` and stop.
+- Otherwise, extract **AEGIS_HOME** from the `AEGIS_HOME=<path>` line.
 
 Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
 
@@ -80,6 +83,26 @@ This analysis drives which components and properties are needed.
 
 ---
 
+## Step 3.5 — Fetch Stack Documentation (Context7)
+
+Read and execute the procedure defined in `{AEGIS_HOME}/shared/context7-lookup.md`.
+
+Inputs:
+- `stack_config`: already loaded in Step 1
+- `topic`: `"architecture patterns, project structure, API conventions, routing, data modeling"`
+
+This step produces a `documentation_context` string containing up-to-date
+documentation snippets for each library/framework in the project's stack.
+
+If Context7 is unavailable and WebSearch fallback is also unsuccessful,
+proceed without documentation context — the design agent will use its
+training knowledge. Note in the Step 7 summary that documentation lookup
+was skipped.
+
+This step is **non-blocking**: failure here never prevents design generation.
+
+---
+
 ## Step 4 — Ask Architectural Decisions (One at a Time)
 
 Before generating, identify open architectural decisions **not already answered by the stack config**.
@@ -118,6 +141,7 @@ Dispatch to `aegis/agents/design-agent.md` with the following inputs:
 - **level_rules**: content of `aegis/framework/levels/<formalism>.md`
 - **req_ids**: list of all REQ-NNN IDs extracted in Step 3
 - **sec_req_ids**: list of all SEC-REQ-* IDs extracted in Step 3
+- **documentation_context**: compiled documentation snippets from Step 3.5 (may be empty if Context7 and WebSearch were both unavailable)
 
 ### What the agent must produce
 
@@ -170,6 +194,7 @@ Summary:
   Components:       <N>
   PROP-NNN count:   <N>
   SEC-PROP count:   <N>
+  Documentation:    <N libraries via Context7 | N libraries via WebSearch | lookup skipped>
   Validation:       <PASS | PASS with warnings | GAPS FOUND>
 
 Warnings (if any):

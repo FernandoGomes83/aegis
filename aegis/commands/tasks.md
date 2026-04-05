@@ -5,12 +5,15 @@ description: Generate tasks.md from design + requirements
 
 ## Bootstrap
 
-Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+Resolve the Aegis framework root path (**AEGIS_HOME**) by running one Bash command:
 
-1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
-2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
-3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
-4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+```bash
+for d in "<project_root>/.claude/aegis" "$HOME/.claude/aegis"; do [ -x "$d/scripts/aegis-bootstrap.sh" ] && exec bash "$d/scripts/aegis-bootstrap.sh" "<project_root>" resolve; done; echo "ERROR=not_found"
+```
+
+Parse the output:
+- If `ERROR=not_found` → tell the user to install Aegis with `npx aegis-sdd` and stop.
+- Otherwise, extract **AEGIS_HOME** from the `AEGIS_HOME=<path>` line.
 
 Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
 
@@ -74,6 +77,23 @@ which PROP-NNN or REQ-NNN it depends on.
 
 ---
 
+### Step 1.5: Fetch Stack Documentation (Context7) [Optional]
+
+Read and execute the procedure defined in `{AEGIS_HOME}/shared/context7-lookup.md`.
+
+Inputs:
+- `stack_config`: loaded from Step 1
+- `topic`: `"setup guide, CLI commands, configuration, migration commands, deployment steps"`
+
+This step produces a `documentation_context` string with up-to-date setup and
+configuration documentation for each library/framework in the stack. This helps
+generate accurate setup tasks, migration commands, and configuration subtasks.
+
+This step is **non-blocking** and **optional**. If Context7 and WebSearch both
+fail, proceed without documentation context.
+
+---
+
 ### Step 2: Determine task ordering strategy
 
 Analyze the extracted components and properties to define a logical build
@@ -134,6 +154,7 @@ ordering_strategy:       <block-by-block plan from Step 2>
 req_ids:                 <indexed list of all REQ-NNN and SEC-REQ-* IDs>
 prop_ids:                <indexed list of all PROP-NNN and SEC-PROP-* IDs>
 components:              <indexed list of component names from design.md>
+documentation_context:   <compiled documentation snippets from Step 1.5, may be empty>
 ```
 
 The agent is responsible for:

@@ -5,12 +5,15 @@ description: Initialize Aegis Framework in a project
 
 ## Bootstrap
 
-Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+Resolve the Aegis framework root path (**AEGIS_HOME**) and create output directories by running one Bash command:
 
-1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
-2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
-3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
-4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+```bash
+for d in "<project_root>/.claude/aegis" "$HOME/.claude/aegis"; do [ -x "$d/scripts/aegis-bootstrap.sh" ] && exec bash "$d/scripts/aegis-bootstrap.sh" "<project_root>" init; done; echo "ERROR=not_found"
+```
+
+Parse the output:
+- If `ERROR=not_found` → tell the user to install Aegis with `npx aegis-sdd` and stop.
+- Otherwise, extract **AEGIS_HOME** from the `AEGIS_HOME=<path>` line. The script also creates `.aegis/`, `.aegis/reports/`, and `.aegis/tests/` directories.
 
 Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
 
@@ -247,26 +250,9 @@ Rules:
 
 ---
 
-## Step 8: Create Output Directories
+## Step 8: Confirm and Next Step
 
-Create the following directories if they do not already exist:
-
-```
-.aegis/reports/
-.aegis/tests/
-```
-
-Use the Bash tool to run:
-
-```bash
-mkdir -p .aegis .aegis/reports .aegis/tests
-```
-
-Confirm creation to the user with a single line.
-
----
-
-## Step 9: Confirm and Next Step
+> Note: Output directories (`.aegis/`, `.aegis/reports/`, `.aegis/tests/`) were already created by the bootstrap script.
 
 Display a concise summary of everything configured:
 
