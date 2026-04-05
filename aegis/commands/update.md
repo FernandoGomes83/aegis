@@ -27,6 +27,7 @@ You are executing the `/aegis:update` command. Your job is to re-generate a chos
 ```
 /aegis:update requirements   — re-read input docs, regenerate requirements.md
 /aegis:update design         — re-read requirements.md, regenerate design.md
+/aegis:update ui-design      — re-read requirements.md + design.md, regenerate ui-design.md
 /aegis:update tasks          — re-read design.md + requirements.md, regenerate tasks.md
 /aegis:update tests          — re-read all upstream artifacts, regenerate tests.md
 ```
@@ -49,13 +50,14 @@ If the file exists, load and store all values (project name, language, formalism
 
 Determine which artifact to update from the command argument.
 
-**If an argument was provided**, match it against the four artifact names:
+**If an argument was provided**, match it against the artifact names:
 - `requirements` → artifact = requirements.md
 - `design` → artifact = design.md
+- `ui-design` → artifact = ui-design.md
 - `tasks` → artifact = tasks.md
 - `tests` → artifact = tests.md
 
-If the argument does not match any of the four names, display an error and the usage block above, then stop.
+If the argument does not match any of the names, display an error and the usage block above, then stop.
 
 **If no argument was provided**, ask the user:
 
@@ -64,10 +66,11 @@ Which artifact do you want to update?
 
   a) requirements — re-read input docs, regenerate requirements.md
   b) design       — re-read requirements.md, regenerate design.md
-  c) tasks        — re-read design.md + requirements.md, regenerate tasks.md
-  d) tests        — re-read all upstream artifacts, regenerate tests.md
+  c) ui-design    — re-read requirements.md + design.md, regenerate ui-design.md
+  d) tasks        — re-read design.md + requirements.md, regenerate tasks.md
+  e) tests        — re-read all upstream artifacts, regenerate tests.md
 
-Enter a, b, c, or d:
+Enter a, b, c, d, or e:
 ```
 
 Wait for the user's selection. Map it to the artifact name before continuing.
@@ -93,7 +96,8 @@ Then stop.
 |---|---|
 | requirements.md | All input documents listed in `.aegis/config.yaml` under `inputs` |
 | design.md | `.aegis/requirements.md` |
-| tasks.md | `.aegis/design.md` and `.aegis/requirements.md` |
+| ui-design.md | `.aegis/requirements.md` and `.aegis/design.md` |
+| tasks.md | `.aegis/design.md`, `.aegis/ui-design.md` (if exists), and `.aegis/requirements.md` |
 | tests.md | `.aegis/design.md` and `.aegis/requirements.md` |
 
 If a source file is missing, warn the user:
@@ -230,8 +234,9 @@ After successful regeneration and validation, identify which downstream artifact
 
 | Updated Artifact | Downstream Artifacts Needing Review |
 |---|---|
-| requirements.md | design.md, tasks.md, tests.md |
-| design.md | tasks.md, tests.md |
+| requirements.md | design.md, ui-design.md, tasks.md, tests.md |
+| design.md | ui-design.md, tasks.md, tests.md |
+| ui-design.md | tasks.md |
 | tasks.md | (none — leaf artifact) |
 | tests.md | (none — leaf artifact) |
 
@@ -311,17 +316,18 @@ After the impact analysis, ask the user which downstream artifacts to update now
 Would you like to update any downstream artifacts now?
 
   a) design.md
-  b) tasks.md
-  c) tests.md
-  d) all of the above
-  e) none — I'll review manually
+  b) ui-design.md
+  c) tasks.md
+  d) tests.md
+  e) all of the above
+  f) none — I'll review manually
 
-Enter a letter or comma-separated letters (e.g., "a,b"):
+Enter a letter or comma-separated letters (e.g., "a,c"):
 ```
 
 Wait for the user's selection.
 
-**If the user selects `e` (none):**
+**If the user selects `f` (none):**
 
 ```
 Understood. The "NEEDS REVIEW" notices have been written to downstream artifacts.
@@ -333,9 +339,10 @@ Stop.
 **If the user selects one or more artifacts:**
 
 Run the update for each selected artifact in dependency order:
-1. design.md (must come before tasks.md and tests.md)
-2. tasks.md
-3. tests.md
+1. design.md (must come before ui-design.md, tasks.md, and tests.md)
+2. ui-design.md (must come before tasks.md)
+3. tasks.md
+4. tests.md
 
 For each artifact in the sequence:
 1. Announce the start:

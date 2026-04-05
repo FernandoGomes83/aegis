@@ -76,6 +76,7 @@ const subCommands = [
   "init",
   "requirements",
   "design",
+  "ui-design",
   "tasks",
   "tests",
   "validate",
@@ -132,12 +133,13 @@ console.log("  Usage:");
 console.log("    1. Start a new Claude Code session");
 console.log("    2. Run /aegis:init in your project");
 console.log("    3. Follow the guided flow:");
-console.log("       /aegis:requirements → /aegis:design → /aegis:tasks → /aegis:tests");
+console.log("       /aegis:requirements → /aegis:design → /aegis:ui-design → /aegis:tasks → /aegis:tests");
 console.log("");
 console.log("  Commands:");
 console.log("    /aegis:init          Set up Aegis in your project");
 console.log("    /aegis:requirements  Generate requirements.md");
 console.log("    /aegis:design        Generate design.md");
+console.log("    /aegis:ui-design     Generate ui-design.md (UI specification)");
 console.log("    /aegis:tasks         Generate tasks.md");
 console.log("    /aegis:tests         Generate tests.md + RED test files");
 console.log("    /aegis:validate      Full validation report");

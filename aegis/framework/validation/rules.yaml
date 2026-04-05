@@ -152,6 +152,70 @@ light_validation:
       level_gate: [standard, formal]
 
   # -------------------------------------------------------------------------
+  # Checks that run immediately after ui-design.md is generated
+  # -------------------------------------------------------------------------
+  after_ui_design:
+
+    - id: VAL-UI-01
+      check: every_ui_req_has_component
+      description: >
+        Every UI-relevant REQ-NNN in requirements.md must be referenced by
+        at least one UI-NNN entry in ui-design.md via a "Derives from:
+        REQ-NNN" link. A UI-relevant requirement is one that describes a
+        user-facing page, screen, form, dashboard, notification, modal,
+        navigation, or any visual/interactive element. Requirements with no
+        corresponding UI specification represent design gaps — the system has
+        no documented visual strategy for satisfying that requirement.
+      severity: warning
+      applies_to: ui-design.md
+
+    - id: VAL-UI-02
+      check: every_ui_refs_valid_ids
+      description: >
+        Every UI-NNN entry in ui-design.md must include a "Derives from:"
+        field referencing at least one valid REQ-NNN or PROP-NNN ID. The
+        referenced IDs must exist in requirements.md or design.md
+        respectively. Broken references — UI specifications that point to
+        IDs not found in upstream artifacts — are blocking errors because
+        they indicate either a typo or an undocumented requirement.
+      severity: error
+      applies_to: ui-design.md
+
+    - id: VAL-UI-03
+      check: no_duplicate_ui_ids
+      description: >
+        All UI-NNN identifiers within ui-design.md must be unique.
+        Duplicate UI IDs cause ambiguous cross-references in downstream
+        artifacts (tasks.md, tests.md) and make traceability unreliable.
+      severity: error
+      applies_to: ui-design.md
+
+    - id: VAL-UI-04
+      check: design_system_present
+      description: >
+        The ui-design.md file must contain a Design System section with at
+        minimum: typography definitions (font families and type scale),
+        color palette (with hex values), and spacing scale (with pixel
+        values). A ui-design.md without a design system produces
+        inconsistent implementations where each component is styled ad hoc.
+      severity: warning
+      applies_to: ui-design.md
+
+    - id: VAL-UI-05
+      check: accessibility_specs_present
+      description: >
+        For Standard and Formal formalism levels, every interactive UI-NNN
+        component (buttons, form inputs, links, modals, dropdowns, tabs,
+        navigation elements) must include an accessibility specification
+        covering at minimum: keyboard interaction and ARIA attributes.
+        Components without accessibility specs create barriers for users
+        of assistive technology and may violate WCAG compliance
+        requirements.
+      severity: warning
+      applies_to: ui-design.md
+      level_gate: [standard, formal]
+
+  # -------------------------------------------------------------------------
   # Checks that run immediately after tasks.md is generated
   # -------------------------------------------------------------------------
   after_tasks:

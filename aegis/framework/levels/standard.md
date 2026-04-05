@@ -174,6 +174,96 @@ A role change takes effect on the next request by any client for that user.
 
 ---
 
+## UI Design Format (Optional)
+
+### Structure
+
+- **Design vision**: 1-3 paragraphs with rationale, key principles (3-5), and the key differentiator.
+- **Full design system**: typography scale (all levels with font family, size, weight, line-height, letter-spacing, color), color palette with CSS variables and contrast compliance table, spacing scale, grid system with breakpoints, border radius scale, motion tokens (duration and easing), shadow scale, and effects.
+- **Component specifications** (UI-NNN): each entry includes visual description, states table (default, hover, active, focus, disabled), responsive behavior per breakpoint, animation/transition specs, and accessibility specs (ARIA, keyboard interaction).
+- **Page layout specifications**: for every primary page/screen — grid placement, component assembly, responsive layout per breakpoint, page-level interactions.
+- **Navigation & Flow**: global navigation pattern, mobile navigation, page transitions.
+
+### Example
+
+```markdown
+## Design Vision
+
+A refined, editorial-inspired interface built for readability and calm focus.
+The design uses generous whitespace, a serif/grotesque font pairing, and a
+muted earth-tone palette with a single sharp accent color for interactive elements.
+
+### Design Principles
+1. **Quiet confidence** — Let content breathe; never compete with it.
+2. **Intentional contrast** — Reserve bold visual weight for actions and alerts.
+3. **Responsive rhythm** — Spacing and typography adapt fluidly, not abruptly.
+
+### Key Differentiator
+A full-bleed editorial layout with oversized serif headings that break the grid,
+creating a magazine-like reading experience uncommon in SaaS dashboards.
+
+## Design System
+
+### Typography
+
+**Font Pairing Rationale**: Instrument Serif provides editorial gravitas for
+headings while Satoshi (grotesque sans) ensures body text scannability. The
+contrast in stroke modulation creates visual hierarchy without relying on size alone.
+
+| Level   | Font Family      | Size | Weight | Line Height | Letter Spacing | Color   |
+|---------|------------------|------|--------|-------------|----------------|---------|
+| Display | Instrument Serif | 48px | 400    | 1.1         | -0.02em        | #1C1917 |
+| H1      | Instrument Serif | 36px | 400    | 1.2         | -0.01em        | #1C1917 |
+| H2      | Instrument Serif | 28px | 400    | 1.3         | 0              | #292524 |
+| Body    | Satoshi          | 16px | 400    | 1.6         | 0              | #44403C |
+| Caption | Satoshi          | 13px | 500    | 1.4         | 0.02em         | #78716C |
+
+### Color Palette
+
+| Token          | Value   | Usage                               |
+|----------------|---------|-------------------------------------|
+| --color-primary| #B45309 | Interactive elements, CTAs           |
+| --color-bg     | #FAFAF9 | Page background                     |
+| --color-surface| #FFFFFF | Cards, elevated elements             |
+| --color-text   | #1C1917 | Headings                            |
+| --color-body   | #44403C | Body text                           |
+| --color-muted  | #A8A29E | Placeholder, disabled text           |
+| --color-border | #E7E5E4 | Default borders                     |
+| --color-error  | #DC2626 | Error states                        |
+
+## Component Specifications
+
+### UI-005: Workspace Card
+Derives from: REQ-001
+
+**Visual Description:**
+280px-wide card, 24px padding, 1px solid var(--color-border), 6px border-radius,
+var(--color-surface) background. Workspace name in H2 style. Member count in
+Caption style below name. 40px bottom margin between cards.
+
+**States:**
+
+| State   | Visual Changes                                            |
+|---------|-----------------------------------------------------------|
+| Default | As described above                                        |
+| Hover   | Shadow: 0 4px 12px rgba(0,0,0,0.06); transform: translateY(-1px); transition: 200ms ease-out |
+| Focus   | 2px solid var(--color-primary) outline, 2px offset        |
+
+**Responsive:**
+
+| Breakpoint | Changes                                    |
+|------------|--------------------------------------------|
+| Mobile     | Full width, 16px padding, stacked vertically|
+| Tablet     | 2-column grid, 20px gap                    |
+| Desktop    | 3-column grid, 24px gap                    |
+
+**Accessibility:**
+- Role: article
+- Keyboard: focusable via Tab, Enter activates navigation to workspace
+```
+
+---
+
 ## Tasks Format
 
 ### Structure

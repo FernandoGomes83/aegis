@@ -44,12 +44,13 @@ Look for `.aegis/config.yaml` at the project root.
 
 ## Step 2: Locate Artifacts
 
-Using the `output.dir` value from config, check which of the four artifact files exist:
+Using the `output.dir` value from config, check which artifact files exist:
 
 | Artifact       | Expected path                    |
 |----------------|----------------------------------|
 | requirements   | `<output.dir>/requirements.md`   |
 | design         | `<output.dir>/design.md`         |
+| ui-design      | `<output.dir>/ui-design.md`      |
 | tasks          | `<output.dir>/tasks.md`          |
 | tests          | `<output.dir>/tests.md`          |
 
@@ -78,6 +79,11 @@ For each artifact file that exists, parse its content and collect the following 
 
 - **TASK count (total)**: count all lines matching `^TASK-\d{3}:`
 - **TASK count (completed)**: count all lines matching `^TASK-\d{3}:` that are followed (within the same task block) by a line containing `Status: done`, `Status: complete`, or `[x]` in a markdown checkbox context — use a case-insensitive match
+- **Stale check**: record the file's last modified timestamp
+
+### ui-design.md (optional)
+
+- **UI count**: count all lines matching `^UI-\d{3}:`
 - **Stale check**: record the file's last modified timestamp
 
 ### tests.md
@@ -131,10 +137,11 @@ Round the final percentage to one decimal place.
 
 An artifact is **stale** if its upstream source was modified **after** the artifact itself was last modified. Apply the propagation rules from `aegis/framework/SPEC.md §9`:
 
-| Source changed    | Potentially stale                    |
-|-------------------|--------------------------------------|
-| requirements.md   | design.md, tasks.md, tests.md        |
-| design.md         | tasks.md, tests.md                   |
+| Source changed    | Potentially stale                              |
+|-------------------|------------------------------------------------|
+| requirements.md   | design.md, ui-design.md, tasks.md, tests.md    |
+| design.md         | ui-design.md, tasks.md, tests.md               |
+| ui-design.md      | tasks.md                                       |
 
 For each artifact that exists, compare its last-modified timestamp against the last-modified timestamp of each of its upstream sources. If a source is newer than the artifact, mark the artifact as stale and record which source triggered it (e.g., "requirements.md added since last generation").
 
@@ -150,9 +157,10 @@ Based on which artifacts exist and their stale status, determine the single most
 |-------------------------------------------------|-------------------------------------------------------------|
 | No artifacts exist                              | `/aegis:requirements`                                         |
 | Only requirements.md exists                     | `/aegis:design`                                               |
-| requirements.md + design.md exist              | `/aegis:tasks` and/or `/aegis:tests`                            |
+| requirements.md + design.md exist              | `/aegis:ui-design` (if frontend project) or `/aegis:tasks`   |
+| requirements.md + design.md + ui-design.md exist| `/aegis:tasks` and/or `/aegis:tests`                          |
 | requirements.md + design.md + tasks.md exist   | `/aegis:tests`                                                |
-| All 4 artifacts exist, none stale              | `/aegis:validate` or start implementation                     |
+| All core artifacts exist, none stale           | `/aegis:validate` or start implementation                     |
 | Any artifact is stale                           | `/aegis:update [stale artifact name]` to propagate changes    |
 | Coverage < 60%                                  | `/aegis:validate` to find and fix coverage gaps               |
 
@@ -181,6 +189,7 @@ Level: [formalism] | Language: [language]
 Artifacts:
   [icon] requirements.md  ([REQ count] REQs, [SEC-REQ count] SEC-REQs, last updated [date])
   [icon] design.md         ([component count] components, [PROP count] PROPs + [SEC-PROP count] SEC-PROPs, last updated [date])
+  [icon] ui-design.md      ([UI count] UI specs, last updated [date])
   [icon] tasks.md          ([completed count]/[total count] tasks complete, last updated [date])
   [icon] tests.md          ([TEST-REQ count] req tests, [TEST-PROP count] prop tests, [TEST-SEC count] security tests, last updated [date])
 
@@ -227,6 +236,7 @@ Next step: [recommendation]
   - SEC-REQ: `^SEC-REQ-[A-Z0-9_-]+:`
   - PROP: `^PROP-\d{3}:`
   - SEC-PROP: `^SEC-PROP-[A-Z0-9_-]+:`
+  - UI: `^UI-\d{3}:`
   - TASK: `^TASK-\d{3}:`
   - TEST-REQ: `^TEST-REQ-\d{3}:`
   - TEST-PROP: `^TEST-PROP-\d{3}:`

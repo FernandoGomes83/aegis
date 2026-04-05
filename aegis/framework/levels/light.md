@@ -113,6 +113,46 @@ from the input, the process terminates with exit code 1 before writing any outpu
 
 ---
 
+## UI Design Format (Optional)
+
+### Structure
+
+- **Design vision**: one to two sentences describing the aesthetic direction.
+- **Minimal design system**: font names (heading, body, mono), hex color palette (primary, secondary, background, text), and base spacing unit.
+- **Component list**: one-line visual descriptions per component. No state tables, no responsive specs, no animation specs.
+- UI-NNN entries cover only the **5 to 10 most prominent** components.
+- No page layout specifications required.
+
+### Example
+
+```markdown
+## Design Vision
+
+A clean, utilitarian interface with a monospace-heavy aesthetic and high contrast.
+
+## Design System
+
+- Heading font: JetBrains Mono (Google Fonts)
+- Body font: IBM Plex Sans (Google Fonts)
+- Primary: #0F172A
+- Accent: #F59E0B
+- Background: #FAFAFA
+- Text: #1E293B
+- Base spacing: 8px
+
+## Component Specifications
+
+**UI-001: CLI Output Display**
+Derives from: F-001
+Description: Full-width monospace block with dark background (#0F172A), green text (#4ADE80), 16px padding, no border radius.
+
+**UI-002: File Path Input**
+Derives from: F-001
+Description: Single-line text input with monospace font, 1px solid border (#CBD5E1), 8px internal padding.
+```
+
+---
+
 ## Tasks Format
 
 ### Structure

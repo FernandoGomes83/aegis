@@ -37,6 +37,7 @@ Read whichever of the following files exist. Do not fail if a file is missing â€
 |------|----------|
 | `.aegis/requirements.md` (or the path from `output.dir` in config) | Requirements |
 | `.aegis/design.md` | Design |
+| `.aegis/ui-design.md` | UI Design (optional) |
 | `.aegis/tasks.md` | Tasks |
 | `.aegis/tests.md` | Tests |
 
@@ -50,6 +51,7 @@ Also read:
 
 - From `requirements.md`: all `REQ-NNN` and `SEC-REQ-*` IDs, and each entry's title/first line.
 - From `design.md`: all `PROP-NNN` and `SEC-PROP-*` IDs, the component each belongs to, and each `Derives from:` reference list.
+- From `ui-design.md` (if present): all `UI-NNN` IDs and each `Derives from:` reference list.
 - From `tasks.md`: all `TASK-NNN` IDs, each `Implements:` reference list, each `Depends on:` reference list.
 - From `tests.md`: all `TEST-REQ-NNN`, `TEST-PROP-NNN`, and `TEST-SEC-*` IDs, and each `Tests:` reference list.
 
@@ -156,6 +158,7 @@ Run all light validation checks from `aegis/framework/validation/rules.yaml` aga
 
 - `after_requirements` checks (VAL-REQ-01 through VAL-REQ-05) if requirements.md is present
 - `after_design` checks (VAL-DES-01 through VAL-DES-05) if design.md is present
+- `after_ui_design` checks (VAL-UI-01 through VAL-UI-05) if ui-design.md is present
 - `after_tasks` checks (VAL-TASK-01 through VAL-TASK-05) if tasks.md is present
 - `after_tests` checks (VAL-TEST-01 through VAL-TEST-05) if tests.md is present
 

@@ -28,6 +28,7 @@ The coverage matrix is a Markdown table. Each row is one requirement (REQ-NNN or
 | Title     | requirements.md | Short title or first line of the requirement                            |
 | Component | design.md       | The component or concern that owns the deriving PROP-NNN/SEC-PROP-*     |
 | Property  | design.md       | The PROP-NNN or SEC-PROP-* that derives from this requirement           |
+| UI Spec   | ui-design.md    | The UI-NNN entry that derives from this requirement (if applicable)     |
 | Task      | tasks.md        | The TASK-NNN(s) that implement the property or requirement              |
 | Test      | tests.md        | The TEST-* entry/entries that verify the property or requirement        |
 | Status    | (computed)      | COVERED, PARTIAL, or UNCOVERED — see §3 for rules                      |
@@ -35,14 +36,14 @@ The coverage matrix is a Markdown table. Each row is one requirement (REQ-NNN or
 ### Example Table
 
 ```
-| REQ ID             | Title                          | Component       | Property        | Task      | Test              | Status    |
-|--------------------|--------------------------------|-----------------|-----------------|-----------|-------------------|-----------|
-| REQ-001            | User Registration              | Auth            | PROP-001        | TASK-001  | TEST-PROP-001     | COVERED   |
-| REQ-002            | Product Listing                | Catalog         | PROP-004        | TASK-005  | —                 | PARTIAL   |
-| REQ-003            | Order Checkout                 | Commerce        | —               | —         | —                 | UNCOVERED |
-| SEC-REQ-IDOR       | Object-Level Authorization     | Auth/API        | SEC-PROP-IDOR   | TASK-003  | TEST-SEC-IDOR     | COVERED   |
-| SEC-REQ-RATELIMIT  | Rate Limiting on Auth Endpoints| API Gateway     | SEC-PROP-RATELIMT| TASK-007 | —                 | PARTIAL   |
-| SEC-REQ-INPUT-VAL  | Input Validation               | All handlers    | SEC-PROP-INPUT  | TASK-002  | TEST-SEC-INPUT    | COVERED   |
+| REQ ID             | Title                          | Component       | Property        | UI Spec   | Task      | Test              | Status    |
+|--------------------|--------------------------------|-----------------|-----------------|-----------|-----------|-------------------|-----------|
+| REQ-001            | User Registration              | Auth            | PROP-001        | UI-001    | TASK-001  | TEST-PROP-001     | COVERED   |
+| REQ-002            | Product Listing                | Catalog         | PROP-004        | UI-003    | TASK-005  | —                 | PARTIAL   |
+| REQ-003            | Order Checkout                 | Commerce        | —               | UI-007    | —         | —                 | UNCOVERED |
+| SEC-REQ-IDOR       | Object-Level Authorization     | Auth/API        | SEC-PROP-IDOR   | —         | TASK-003  | TEST-SEC-IDOR     | COVERED   |
+| SEC-REQ-RATELIMIT  | Rate Limiting on Auth Endpoints| API Gateway     | SEC-PROP-RATELIMT| —        | TASK-007  | —                 | PARTIAL   |
+| SEC-REQ-INPUT-VAL  | Input Validation               | All handlers    | SEC-PROP-INPUT  | —         | TASK-002  | TEST-SEC-INPUT    | COVERED   |
 ```
 
 When a cell has no entry, it is shown as `—` (an em-dash). When a requirement has multiple properties, tasks, or tests, the primary one is shown and the count of additional entries is noted (e.g., `PROP-011 (+2)`).

@@ -4,12 +4,13 @@ A framework for generating structured software design documents with embedded se
 
 ## What it does
 
-Aegis generates 4 artifacts from your project docs:
+Aegis generates up to 5 artifacts from your project docs:
 
 1. **requirements.md** — What the system must do (functional + security requirements)
 2. **design.md** — How it will be built (architecture, data models, correctness properties)
-3. **tasks.md** — Implementation plan (ordered tasks with traceability)
-4. **tests.md** — TDD test specs + RED test files (all tests fail before implementation)
+3. **ui-design.md** — What the interface looks and feels like (design system, component specs, page layouts) *(optional — for projects with a frontend/UI)*
+4. **tasks.md** — Implementation plan (ordered tasks with traceability)
+5. **tests.md** — TDD test specs + RED test files (all tests fail before implementation)
 
 Every artifact has bidirectional traceability. Every project gets full security coverage regardless of documentation level.
 
@@ -51,6 +52,7 @@ In any project with Claude Code:
 /aegis:init          → Configure project (level, language, stack, inputs)
 /aegis:requirements  → Generate requirements.md
 /aegis:design        → Generate design.md
+/aegis:ui-design     → Generate ui-design.md (frontend/UI design specification)
 /aegis:tasks         → Generate tasks.md
 /aegis:tests         → Generate tests.md + RED test files
 /aegis:validate      → Full validation report (coverage, security audit, gaps)
@@ -80,7 +82,7 @@ The `aegis/framework/` directory contains the standalone specification:
 
 - `SPEC.md` — The formal framework specification
 - `levels/` — Formalism level definitions
-- `templates/` — Artifact templates (12 templates: 4 artifacts x 3 levels)
+- `templates/` — Artifact templates (15 templates: 5 artifacts x 3 levels)
 - `security/` — SECURITY_UNIVERSAL.md + security requirements/properties YAML
 - `validation/` — Validation rules and coverage matrix docs
 - `i18n/` — English and Portuguese Brazilian labels

@@ -39,7 +39,7 @@ The framework enforces three principles unconditionally:
 
 ## 2. Artifacts
 
-The framework produces exactly four artifacts per project. They are always generated in order because each derives from the previous.
+The framework produces up to five artifacts per project. They are always generated in order because each derives from the previous. The UI Design artifact is optional — it is generated when the project has a frontend/UI layer.
 
 ### Artifact Table
 
@@ -47,7 +47,8 @@ The framework produces exactly four artifacts per project. They are always gener
 |--------------------|-------------------|------------------------------------------------------|--------------------------------------|
 | Requirements       | requirements.md   | What must the system do? Who needs it? Why?          | Input docs (spec, brief, plan, etc.) |
 | Design             | design.md         | How will the system do it? What are the properties?  | requirements.md                      |
-| Tasks              | tasks.md          | What work units implement the design? In what order? | design.md                            |
+| UI Design          | ui-design.md      | What does the interface look and feel like?          | requirements.md + design.md          |
+| Tasks              | tasks.md          | What work units implement the design? In what order? | design.md + ui-design.md (optional)  |
 | Tests              | tests.md          | How do we verify each property is satisfied?         | design.md + requirements.md          |
 
 ### Generation Flow
@@ -71,11 +72,17 @@ The following diagram shows the generation order and data flow between artifacts
   |                  |      PROP-NNN: design properties
   |                  |      SEC-PROP-*: security properties (always injected)
   +------------------+
+          |
+          v (optional — for projects with frontend/UI)
+  +------------------+
+  |  ui-design.md    |  <-- generated third (optional)
+  |                  |      UI-NNN: UI component specifications
+  +------------------+
          / \
         /   \
        v     v
   +----------+  +-----------+
-  | tasks.md |  |  tests.md |  <-- generated third (can be parallel)
+  | tasks.md |  |  tests.md |  <-- generated last (can be parallel)
   |          |  |           |
   | TASK-NNN |  | TEST-*    |
   +----------+  +-----------+
@@ -88,6 +95,8 @@ The following diagram shows the generation order and data flow between artifacts
 **design.md** — Declares how the system satisfies requirements. Organized by component or concern. Each design decision is captured as a property (PROP-NNN) that derives from one or more requirements. Architecture diagrams and data flow descriptions live here. Security properties (SEC-PROP-*) are always present.
 
 **tasks.md** — Decomposes the design into executable work units (TASK-NNN). Each task references the PROP-NNN it implements. Tasks are ordered by dependency and include effort estimates (at Standard and Formal levels). The tasks file is the handoff to engineering.
+
+**ui-design.md** (optional) — Declares the visual and interaction design of the frontend interface. Generated when the project has a UI layer. Organized by design system tokens and component specifications (UI-NNN). Each UI specification derives from one or more requirements (REQ-NNN) or design properties (PROP-NNN). Includes typography, color palette, spacing, motion, component states, page layouts, responsive behavior, and accessibility specifications. The output is a complete specification — not code — detailed enough for direct implementation by a developer or another agent.
 
 **tests.md** — Defines verification strategy. Each test (TEST-*) references the PROP-NNN or REQ-NNN it validates. Includes unit tests, integration tests, and — always — security tests regardless of formalism level.
 
@@ -153,6 +162,7 @@ This means:
 | SEC-REQ-*     | requirements.md   | SEC-REQ-IDOR      | Security requirement, keyed by threat/control name        |
 | PROP-NNN      | design.md         | PROP-007          | Design property, three-digit zero-padded                  |
 | SEC-PROP-*    | design.md         | SEC-PROP-RATELIMIT| Security design property, keyed by control name           |
+| UI-NNN        | ui-design.md      | UI-001            | UI component specification, three-digit zero-padded       |
 | TASK-NNN      | tasks.md          | TASK-012          | Work task, three-digit zero-padded                        |
 | TEST-REQ-NNN  | tests.md          | TEST-REQ-001      | Test targeting a functional requirement                   |
 | TEST-PROP-NNN | tests.md          | TEST-PROP-007     | Test targeting a design property                          |
@@ -327,6 +337,16 @@ Runs automatically after each artifact is generated. Fast. Produces pass/fail pe
 | No duplicate IDs                       | Yes      | PROP-NNN IDs must be unique                                         |
 | Architecture section present           | No       | Standard and Formal levels require an Architecture section          |
 
+#### After ui-design.md is generated
+
+| Check                                  | Critical | Description                                                         |
+|----------------------------------------|----------|---------------------------------------------------------------------|
+| Every UI-relevant REQ has a UI-NNN     | No       | UI-relevant requirements must be addressed by UI component specs    |
+| Every UI-NNN traces to REQ or PROP     | Yes      | UI specs with broken or absent Derives from: references are errors  |
+| No duplicate UI-NNN IDs               | Yes      | UI-NNN IDs must be unique                                           |
+| Design system section present          | No       | Typography, color palette, and spacing must be defined              |
+| Accessibility specs present            | No       | Standard and Formal: interactive components need accessibility specs|
+
 #### After tasks.md is generated
 
 | Check                                  | Critical | Description                                                         |
@@ -483,8 +503,9 @@ The Aegis framework uses a manual propagation model. When a source artifact chan
 
 | Changed Artifact  | Marks as "needs review"                          |
 |-------------------|--------------------------------------------------|
-| requirements.md   | design.md, tasks.md, tests.md                    |
-| design.md         | tasks.md, tests.md                               |
+| requirements.md   | design.md, ui-design.md, tasks.md, tests.md      |
+| design.md         | ui-design.md, tasks.md, tests.md                 |
+| ui-design.md      | tasks.md                                         |
 | tasks.md          | (none — tasks.md is a leaf artifact)             |
 | tests.md          | (none — tests.md is a leaf artifact)             |
 
@@ -525,6 +546,7 @@ When the `/aegis:update` command detects that an artifact has changed, it writes
     config.yaml
     requirements.md
     design.md
+    ui-design.md              <-- optional, for projects with frontend/UI
     tasks.md
     tests.md
     tests/                    <-- RED test files
@@ -542,6 +564,10 @@ aegis/                        (framework installation, not per-project)
         base.md               <- requirements.md template (all levels)
       design/
         base.md               <- design.md template (all levels)
+      ui-design/
+        light.template.md     <- UI design template (Light level)
+        standard.template.md  <- UI design template (Standard level)
+        formal.template.md    <- UI design template (Formal level)
       tasks/
         base.md               <- tasks.md template (all levels)
       tests/
@@ -564,6 +590,7 @@ aegis/                        (framework installation, not per-project)
     init.md                   <- /aegis:init command spec
     requirements.md           <- /aegis:requirements command spec
     design.md                 <- /aegis:design command spec
+    ui-design.md              <- /aegis:ui-design command spec
     tasks.md                  <- /aegis:tasks command spec
     tests.md                  <- /aegis:tests command spec
     validate.md               <- /aegis:validate command spec
@@ -572,6 +599,7 @@ aegis/                        (framework installation, not per-project)
   agents/
     requirements-agent.md     <- requirements generation agent
     design-agent.md           <- design generation agent
+    ui-design-agent.md        <- UI design specification agent
     tasks-agent.md            <- tasks generation agent
     tests-agent.md            <- tests generation agent
     validation-agent.md       <- validation agent
@@ -590,6 +618,7 @@ aegis/                        (framework installation, not per-project)
 | Injection moment   | One of three points in the generation pipeline where security content is added to an artifact   |
 | SEC-REQ-*          | A security requirement, always present in requirements.md, named by threat or control           |
 | SEC-PROP-*         | A security design property, always present in design.md, derived from SEC-REQ-* entries        |
+| UI-NNN             | A UI component specification in ui-design.md, derived from REQ-NNN or PROP-NNN entries        |
 | TEST-SEC-*         | A security test, always present in tests.md, verifying a SEC-PROP-* entry                      |
 | Needs review       | A notice written to an artifact indicating its source has changed and it must be re-validated   |
 | Coverage Matrix    | A cross-artifact table showing which requirements have corresponding properties, tasks, tests   |

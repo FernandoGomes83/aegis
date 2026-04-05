@@ -25,7 +25,7 @@ Thanks for your interest in contributing to Aegis!
 
 - Follow existing file conventions and naming patterns
 - Keep security requirements at full rigor — security is never optional
-- Use the ID conventions from `aegis/framework/SPEC.md` (REQ-NNN, PROP-NNN, etc.)
+- Use the ID conventions from `aegis/framework/SPEC.md` (REQ-NNN, PROP-NNN, UI-NNN, etc.)
 - Write clear commit messages: `feat:`, `fix:`, `docs:`, `refactor:`
 - Keep PRs focused — one feature or fix per PR
 
