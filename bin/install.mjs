@@ -39,8 +39,8 @@ if (!scope) {
   const answer = await new Promise((resolve) => {
     console.log("  Where do you want to install Aegis?");
     console.log("");
-    console.log("    g) Global  — available in all projects (~/.claude/plugins/aegis/)");
-    console.log("    l) Local   — this project only (.claude/plugins/aegis/)");
+    console.log("    g) Global  — available in all projects (~/.claude/)");
+    console.log("    l) Local   — this project only (.claude/)");
     console.log("");
     rl.question("  Choose [g/l]: ", resolve);
   });
@@ -55,37 +55,56 @@ if (!scope) {
   console.log("");
 }
 
-// Determine target
-let target;
+// Determine base .claude directory
+let claudeBase;
 if (scope === "local") {
-  target = join(process.cwd(), ".claude", "plugins", "aegis");
+  claudeBase = join(process.cwd(), ".claude");
 } else {
-  const claudeDir = join(homedir(), ".claude");
-  if (!existsSync(claudeDir)) {
+  claudeBase = join(homedir(), ".claude");
+  if (!existsSync(claudeBase)) {
     console.error("  Error: ~/.claude not found. Is Claude Code installed?");
     console.error("  Install Claude Code first: https://claude.ai/claude-code");
     process.exit(1);
   }
-  target = join(homedir(), ".claude", "plugins", "aegis");
 }
 
-// Create parent dirs if needed
-const parentDir = dirname(target);
-if (!existsSync(parentDir)) {
-  mkdirSync(parentDir, { recursive: true });
+const commandFile = join(claudeBase, "commands", "aegis.md");
+const frameworkDir = join(claudeBase, "aegis");
+
+// Create commands directory if needed
+mkdirSync(join(claudeBase, "commands"), { recursive: true });
+
+// Remove previous installation (current structure)
+if (existsSync(frameworkDir)) {
+  rmSync(frameworkDir, { recursive: true });
+}
+if (existsSync(commandFile)) {
+  rmSync(commandFile);
 }
 
-// Remove old installation at this scope
-if (existsSync(target)) {
-  rmSync(target, { recursive: true });
-  console.log("  Removed previous Aegis installation.");
+// Remove old plugins-based installation if present
+const oldPluginsDir = join(claudeBase, "plugins", "aegis");
+if (existsSync(oldPluginsDir)) {
+  rmSync(oldPluginsDir, { recursive: true });
+  console.log("  Removed old installation from plugins/aegis/.");
 }
 
-// Copy
-cpSync(source, target, { recursive: true });
+// Install skill entry point as a Claude Code command
+cpSync(join(source, "skill.md"), commandFile);
+
+// Install framework files
+mkdirSync(frameworkDir, { recursive: true });
+for (const dir of ["framework", "commands", "agents"]) {
+  const src = join(source, dir);
+  if (existsSync(src)) {
+    cpSync(src, join(frameworkDir, dir), { recursive: true });
+  }
+}
 
 const scopeLabel = scope === "local" ? "project" : "global";
-console.log(`  Installed (${scopeLabel}): ${target}`);
+console.log(`  Installed (${scopeLabel}):`);
+console.log(`    Skill:     ${commandFile}`);
+console.log(`    Framework: ${frameworkDir}/`);
 console.log("");
 console.log("  Usage:");
 console.log("    1. Start a new Claude Code session");
