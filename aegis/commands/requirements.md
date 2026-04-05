@@ -1,9 +1,22 @@
 ---
-name: requirements
+name: aegis:requirements
 description: Generate requirements.md from project input docs
 ---
 
-# /aegis requirements
+## Bootstrap
+
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# /aegis:requirements
 
 Generate `requirements.md` from the project's input documents. Follow every step in order. Do not skip steps or combine them unless explicitly noted.
 
@@ -13,7 +26,7 @@ Generate `requirements.md` from the project's input documents. Follow every step
 
 Before starting, verify:
 
-1. `.aegis/config.yaml` exists at the project root. If it does not, stop immediately and tell the user to run `/aegis init` first.
+1. `.aegis/config.yaml` exists at the project root. If it does not, stop immediately and tell the user to run `/aegis:init` first.
 2. The `inputs` list in `.aegis/config.yaml` contains at least one entry. If the list is empty or absent, warn the user that requirements will contain security content only, and ask whether they want to continue or add input docs first.
 
 ---
@@ -170,4 +183,4 @@ Output written to: .aegis/requirements.md
 
 Then suggest the next step:
 
-> Requirements are ready. When you're ready to define how the system will satisfy them, run `/aegis design`.
+> Requirements are ready. When you're ready to define how the system will satisfy them, run `/aegis:design`.

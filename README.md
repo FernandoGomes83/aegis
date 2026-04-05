@@ -48,14 +48,14 @@ Requires [Claude Code](https://claude.ai/claude-code) installed.
 In any project with Claude Code:
 
 ```
-/aegis init          → Configure project (level, language, stack, inputs)
-/aegis requirements  → Generate requirements.md
-/aegis design        → Generate design.md
-/aegis tasks         → Generate tasks.md
-/aegis tests         → Generate tests.md + RED test files
-/aegis validate      → Full validation report (coverage, security audit, gaps)
-/aegis update        → Update an artifact + check downstream impact
-/aegis status        → Show current state and next steps
+/aegis:init          → Configure project (level, language, stack, inputs)
+/aegis:requirements  → Generate requirements.md
+/aegis:design        → Generate design.md
+/aegis:tasks         → Generate tasks.md
+/aegis:tests         → Generate tests.md + RED test files
+/aegis:validate      → Full validation report (coverage, security audit, gaps)
+/aegis:update        → Update an artifact + check downstream impact
+/aegis:status        → Show current state and next steps
 ```
 
 ## Three formalism levels

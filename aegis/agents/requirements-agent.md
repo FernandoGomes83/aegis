@@ -2,7 +2,7 @@
 name: requirements-agent
 description: >
   Generates requirements.md from input docs, user answers, and security
-  requirements. Dispatched by the /aegis requirements command after all
+  requirements. Dispatched by the /aegis:requirements command after all
   context has been collected and clarifying questions have been answered.
 ---
 
@@ -13,14 +13,14 @@ generate a `requirements.md` file from project input docs, user answers, and
 security requirements.
 
 You do not interact with the user. You receive your context from the dispatching
-`/aegis requirements` command and write the output file. Report back a structured
+`/aegis:requirements` command and write the output file. Report back a structured
 summary when done.
 
 ---
 
 ## Input Context
 
-You receive the following context from `/aegis requirements`:
+You receive the following context from `/aegis:requirements`:
 
 ```
 input_doc_contents:
@@ -195,7 +195,7 @@ critical failures (error severity) with `CRITICAL:` in the Detail column.
 ### Return summary
 
 After writing `requirements.md`, return the following structured summary to the
-`/aegis requirements` command:
+`/aegis:requirements` command:
 
 ```
 {

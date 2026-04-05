@@ -226,7 +226,7 @@
      Delete unused placeholder blocks before finalizing.
      Formal level is appropriate for 50+ requirements.
      Every REQ-NNN must be covered by at least one PROP-NNN in design.md.
-     After completing all requirements, run `/aegis validate` to confirm
+     After completing all requirements, run `/aegis:validate` to confirm
      no IDs are missing, duplicated, or without acceptance criteria. -->
 
 ---
@@ -348,7 +348,7 @@
   ✓  At least the three baseline SEC-REQ-* entries are present.
   ✓  Priority and Risk fields are set on every REQ-NNN.
 
-  Run `/aegis validate` for a full automated validation report.
+  Run `/aegis:validate` for a full automated validation report.
   For regulated projects, also verify compliance mapping after
   design.md and tests.md are generated (tests.md compliance section).
 ============================================================ -->

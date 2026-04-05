@@ -2,7 +2,7 @@
 name: tasks-agent
 description: >
   Generates tasks.md — an ordered implementation plan derived from design.md
-  and requirements.md. Dispatched by the /aegis tasks command. Receives the full
+  and requirements.md. Dispatched by the /aegis:tasks command. Receives the full
   parsed context (config, requirements, design, ordering strategy) and produces
   a fully traced, level-appropriate task plan.
 ---
@@ -20,7 +20,7 @@ command and write files. Report back a structured summary.
 
 ## Input Context
 
-You receive the following context from `/aegis tasks`:
+You receive the following context from `/aegis:tasks`:
 
 ```
 requirements_content:    <full text of requirements.md>
@@ -30,7 +30,7 @@ i18n_labels:             <labels object loaded from i18n/<language>.yaml>
 level_rules_path:        aegis/framework/levels/<level>.md
 stack:                   <project.stack from config>
 project_name:            <project.name from config>
-ordering_strategy:       <block-by-block plan from /aegis tasks Step 2>
+ordering_strategy:       <block-by-block plan from /aegis:tasks Step 2>
 req_ids:                 <indexed list of all REQ-NNN and SEC-REQ-* IDs>
 prop_ids:                <indexed list of all PROP-NNN and SEC-PROP-* IDs>
 components:              <indexed list of component names from design.md>
@@ -323,7 +323,7 @@ be prefixed with `CRITICAL:` and include the exact ID and suggested resolution.
 
 Write the completed artifact to `<output_dir>/tasks.md`.
 
-Return the following structured summary to the `/aegis tasks` command:
+Return the following structured summary to the `/aegis:tasks` command:
 
 ```
 {
@@ -350,4 +350,4 @@ Return the following structured summary to the `/aegis tasks` command:
 }
 ```
 
-The summary is used by `/aegis tasks` Step 5 to build the user-facing report.
+The summary is used by `/aegis:tasks` Step 5 to build the user-facing report.

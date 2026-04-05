@@ -2,7 +2,7 @@
 
 > Version 1.0 — 2026-04-04
 > This document explains how to read, generate, and act on the coverage matrix
-> produced by `/aegis validate` (VAL-FULL-01).
+> produced by `/aegis:validate` (VAL-FULL-01).
 
 ---
 
@@ -204,7 +204,7 @@ The full validation report is written to:
 .aegis/reports/validation-YYYY-MM-DD.md
 ```
 
-Where `YYYY-MM-DD` is the date the `/aegis validate` command was run.
+Where `YYYY-MM-DD` is the date the `/aegis:validate` command was run.
 
 If a report for the same date already exists, the new report appends a counter suffix:
 
@@ -213,13 +213,13 @@ If a report for the same date already exists, the new report appends a counter s
 .aegis/reports/validation-2026-04-04-2.md    ← second run of the same day
 ```
 
-The `/aegis validate` command also prints a brief summary to stdout (counts of COVERED/PARTIAL/UNCOVERED, total gaps, PASS/FAIL/N/A for security) and writes the full report to the path above. The summary in stdout includes the path to the report file for easy access.
+The `/aegis:validate` command also prints a brief summary to stdout (counts of COVERED/PARTIAL/UNCOVERED, total gaps, PASS/FAIL/N/A for security) and writes the full report to the path above. The summary in stdout includes the path to the report file for easy access.
 
 ### Report Structure
 
 A complete validation report has the following top-level sections, in order:
 
-1. **Header** — project name, formalism level, date, `/aegis validate` command version
+1. **Header** — project name, formalism level, date, `/aegis:validate` command version
 2. **Stats Block** — counts and overall coverage percentage (VAL-FULL-05)
 3. **Coverage Matrix** — the full REQ × Component × PROP × TASK × TEST table (VAL-FULL-01)
 4. **Coverage Summary** — COVERED/PARTIAL/UNCOVERED counts and percentages

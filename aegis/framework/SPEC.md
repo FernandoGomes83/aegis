@@ -348,7 +348,7 @@ Runs automatically after each artifact is generated. Fast. Produces pass/fail pe
 
 ### Full Validation (On Demand)
 
-Triggered explicitly via `/aegis validate`. Runs all light checks plus four additional reports. May take longer as it performs cross-artifact analysis.
+Triggered explicitly via `/aegis:validate`. Runs all light checks plus four additional reports. May take longer as it performs cross-artifact analysis.
 
 #### Coverage Matrix
 
@@ -490,30 +490,30 @@ The Aegis framework uses a manual propagation model. When a source artifact chan
 
 ### How "Needs Review" Works
 
-When the `/aegis update` command detects that an artifact has changed, it writes a review notice to the top of each downstream artifact:
+When the `/aegis:update` command detects that an artifact has changed, it writes a review notice to the top of each downstream artifact:
 
 ```
 > NEEDS REVIEW — requirements.md was updated on 2026-04-04.
-> Re-run `/aegis design`, `/aegis tasks`, and `/aegis tests` to propagate changes,
+> Re-run `/aegis:design`, `/aegis:tasks`, and `/aegis:tests` to propagate changes,
 > or manually review and update this artifact to reflect the new requirements.
 > Remove this notice when the review is complete.
 ```
 
 ### What Does Not Auto-Propagate
 
-- Changes to requirements do not automatically regenerate design. The designer must review the change, decide whether existing properties still hold, and either re-run `/aegis design` or manually update `design.md`.
+- Changes to requirements do not automatically regenerate design. The designer must review the change, decide whether existing properties still hold, and either re-run `/aegis:design` or manually update `design.md`.
 - Regeneration overwrites the existing artifact by default. Use `--merge` to run the agent in merge mode, which adds new content and flags conflicts rather than overwriting.
 - Security content is always re-injected on regeneration. Security sections from a previous generation are never preserved verbatim — they are replaced with the current output of the security agent.
 
 ### Propagation Scenarios
 
-**Scenario 1 — New requirement added**: A new REQ-NNN is added to requirements.md. The `/aegis update` command marks design.md, tasks.md, and tests.md as "needs review". The developer runs `/aegis design --merge` to add a PROP-NNN for the new requirement without overwriting existing properties.
+**Scenario 1 — New requirement added**: A new REQ-NNN is added to requirements.md. The `/aegis:update` command marks design.md, tasks.md, and tests.md as "needs review". The developer runs `/aegis:design --merge` to add a PROP-NNN for the new requirement without overwriting existing properties.
 
 **Scenario 2 — Requirement changed**: REQ-003's acceptance criteria are tightened. The dependent PROP-007 in design.md may or may not need changes. The developer reviews PROP-007, updates it if needed, and removes the "needs review" notice. tasks.md and tests.md are still marked until the developer confirms they are consistent.
 
-**Scenario 3 — Security requirement added**: A new SEC-REQ-* is added (e.g., because SECURITY_UNIVERSAL.md was updated with a new threat category). Running `/aegis requirements --security-refresh` re-injects all SEC-REQ-* entries and marks design.md and tests.md as "needs review" for the security sections.
+**Scenario 3 — Security requirement added**: A new SEC-REQ-* is added (e.g., because SECURITY_UNIVERSAL.md was updated with a new threat category). Running `/aegis:requirements --security-refresh` re-injects all SEC-REQ-* entries and marks design.md and tests.md as "needs review" for the security sections.
 
-**Scenario 4 — Full regeneration**: The developer runs `/aegis requirements && /aegis design && /aegis tasks && /aegis tests` in sequence. All artifacts are regenerated from scratch. This is appropriate when input documents have changed significantly. Hand-edited content will be lost unless `--merge` is used.
+**Scenario 4 — Full regeneration**: The developer runs `/aegis:requirements && /aegis:design && /aegis:tasks && /aegis:tests` in sequence. All artifacts are regenerated from scratch. This is appropriate when input documents have changed significantly. Hand-edited content will be lost unless `--merge` is used.
 
 ---
 
@@ -561,14 +561,14 @@ aegis/                        (framework installation, not per-project)
       en.yaml                 <- English strings
       pt-BR.yaml              <- Portuguese (Brazil) strings
   commands/
-    init.md                   <- /aegis init command spec
-    requirements.md           <- /aegis requirements command spec
-    design.md                 <- /aegis design command spec
-    tasks.md                  <- /aegis tasks command spec
-    tests.md                  <- /aegis tests command spec
-    validate.md               <- /aegis validate command spec
-    update.md                 <- /aegis update command spec
-    status.md                 <- /aegis status command spec
+    init.md                   <- /aegis:init command spec
+    requirements.md           <- /aegis:requirements command spec
+    design.md                 <- /aegis:design command spec
+    tasks.md                  <- /aegis:tasks command spec
+    tests.md                  <- /aegis:tests command spec
+    validate.md               <- /aegis:validate command spec
+    update.md                 <- /aegis:update command spec
+    status.md                 <- /aegis:status command spec
   agents/
     requirements-agent.md     <- requirements generation agent
     design-agent.md           <- design generation agent

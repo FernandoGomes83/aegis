@@ -3,7 +3,7 @@
 #
 # This file is the machine-readable definition of all validation rules used by:
 #   - Light validation: runs automatically after each artifact is generated
-#   - Full validation: runs on demand via `/aegis validate`
+#   - Full validation: runs on demand via `/aegis:validate`
 #
 # Severity values:
 #   error   — blocks advancement; the artifact is considered invalid until the check passes
@@ -278,7 +278,7 @@ light_validation:
 
 # ---------------------------------------------------------------------------
 # FULL VALIDATION
-# Triggered on demand via `/aegis validate`.
+# Triggered on demand via `/aegis:validate`.
 # Runs all light checks plus cross-artifact analysis.
 # Output is written to .aegis/reports/validation-YYYY-MM-DD.md
 # ---------------------------------------------------------------------------

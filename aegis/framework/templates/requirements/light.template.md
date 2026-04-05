@@ -171,5 +171,5 @@
   ✓  The Security Requirements section is present and unmodified.
   ✓  At least the three baseline SEC-REQ-* entries are present.
 
-  Run `/aegis validate` for a full automated validation report.
+  Run `/aegis:validate` for a full automated validation report.
 ============================================================ -->

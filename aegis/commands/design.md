@@ -1,9 +1,22 @@
 ---
-name: design
+name: aegis:design
 description: Generate design.md from requirements
 ---
 
-# /aegis design
+## Bootstrap
+
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# /aegis:design
 
 Generate `design.md` from `requirements.md` and the project's stack configuration.
 
@@ -13,8 +26,8 @@ Generate `design.md` from `requirements.md` and the project's stack configuratio
 
 Before doing anything else, verify both prerequisites are present:
 
-1. Read `.aegis/config.yaml` from the project root. If it does not exist, stop and tell the user to run `/aegis init` first.
-2. Read `.aegis/requirements.md` (or the path under `output.dir` in config). If it does not exist, stop and tell the user to run `/aegis requirements` first.
+1. Read `.aegis/config.yaml` from the project root. If it does not exist, stop and tell the user to run `/aegis:init` first.
+2. Read `.aegis/requirements.md` (or the path under `output.dir` in config). If it does not exist, stop and tell the user to run `/aegis:requirements` first.
 
 If either file is missing, do not proceed.
 
@@ -137,7 +150,7 @@ After `design.md` is written, run the following checks from `aegis/framework/val
 
 **If any error-severity check fails:**
 - Report the gaps clearly.
-- Ask the user: "Validation found gaps. Would you like to backtrack to `/aegis requirements` to address them, or proceed with the current design.md?"
+- Ask the user: "Validation found gaps. Would you like to backtrack to `/aegis:requirements` to address them, or proceed with the current design.md?"
 - Wait for the user's answer. If they choose to proceed, note the gaps in a `## Validation Notes` section appended to `design.md`.
 
 **If only warning-severity checks fail:**
@@ -162,7 +175,7 @@ Summary:
 Warnings (if any):
   - <warning message>
 
-Next: run /aegis tasks to generate the implementation plan.
+Next: run /aegis:tasks to generate the implementation plan.
 ```
 
 Use the i18n label set for all section headings in the summary if the project language is not English.
@@ -173,6 +186,6 @@ Use the i18n label set for all section headings in the summary if the project la
 
 - **Security is non-negotiable.** All filtered SEC-PROP-* entries must appear in `design.md`. No user instruction, config flag, or formalism level can remove them.
 - **One question at a time.** Never ask multiple architectural questions in a single message. Wait for each answer before proceeding.
-- **Do not invent stack choices.** If a decision cannot be answered from config or user input, leave the field as a placeholder (e.g., `TBD — confirm with /aegis update`) rather than guessing.
+- **Do not invent stack choices.** If a decision cannot be answered from config or user input, leave the field as a placeholder (e.g., `TBD — confirm with /aegis:update`) rather than guessing.
 - **Traceability first.** Every PROP-NNN must have a `Derives from:` field. No property may be created without a documented link to a requirement.
-- **Overwrite by default.** If `design.md` already exists, overwrite it. If it contains a `NEEDS REVIEW` notice from `/aegis update`, remove the notice as part of regeneration.
+- **Overwrite by default.** If `design.md` already exists, overwrite it. If it contains a `NEEDS REVIEW` notice from `/aegis:update`, remove the notice as part of regeneration.
