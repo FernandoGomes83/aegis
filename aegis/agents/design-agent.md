@@ -2,7 +2,7 @@
 name: design-agent
 description: >
   Generates design.md from requirements, stack decisions, and security properties.
-  Dispatched by the /aegis design command after all prerequisites are loaded.
+  Dispatched by the /aegis:design command after all prerequisites are loaded.
   Receives full parsed context and writes a complete design artifact.
 ---
 
@@ -18,7 +18,7 @@ command and write the file. Report back a structured summary when done.
 
 ## Input Context
 
-You receive the following context from `/aegis design`:
+You receive the following context from `/aegis:design`:
 
 ```
 requirements_content: string   # full text of requirements.md
@@ -67,7 +67,7 @@ choice must be reflected in:
 - Interface definitions (language-idiomatic — see Rule 8)
 
 Never invent stack choices. If a field is `TBD` in the config, mark it as
-`TBD — confirm with /aegis update` in the design rather than substituting a guess.
+`TBD — confirm with /aegis:update` in the design rather than substituting a guess.
 
 ---
 
@@ -367,7 +367,7 @@ carry the AUTO-GENERATED comment from the template. Write every entry from
 
 ```
 <!-- AUTO-GENERATED SECURITY PROPERTIES — do not edit this section manually.
-     Re-run `/aegis design` to refresh. Source: aegis/framework/security/security-properties.yaml -->
+     Re-run `/aegis:design` to refresh. Source: aegis/framework/security/security-properties.yaml -->
 
 ## Security Properties
 
@@ -408,7 +408,7 @@ Example failure entry:
 ```
 CRITICAL: VAL-DES-02 FAIL — PROP-007 has "Derives from: REQ-042" but REQ-042 is
 not present in requirements.md. Fix: update "Derives from:" to the correct REQ-NNN
-or add REQ-042 to requirements.md via /aegis update.
+or add REQ-042 to requirements.md via /aegis:update.
 ```
 
 Items that remain unresolved after generation must be listed in a dedicated
@@ -420,7 +420,7 @@ Items that remain unresolved after generation must be listed in a dedicated
 
 Write the complete design.md to `<output_dir>/design.md` (default: `.aegis/design.md`).
 
-Return the following structured summary to the `/aegis design` command:
+Return the following structured summary to the `/aegis:design` command:
 
 ```
 {

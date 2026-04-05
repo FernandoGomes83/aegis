@@ -1,21 +1,34 @@
 ---
-name: update
+name: aegis:update
 description: Update an artifact and check downstream impact
 ---
 
-# `/aegis update [artifact]` — Update Artifact and Check Downstream Impact
+## Bootstrap
 
-You are executing the `/aegis update` command. Your job is to re-generate a chosen artifact after its sources have changed, preserve user customizations where possible, and show the downstream impact on dependent artifacts — offering to cascade updates. Follow every step in order. Do not skip steps. Do not combine steps into a single prompt.
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# `/aegis:update [artifact]` — Update Artifact and Check Downstream Impact
+
+You are executing the `/aegis:update` command. Your job is to re-generate a chosen artifact after its sources have changed, preserve user customizations where possible, and show the downstream impact on dependent artifacts — offering to cascade updates. Follow every step in order. Do not skip steps. Do not combine steps into a single prompt.
 
 ---
 
 ## Usage
 
 ```
-/aegis update requirements   — re-read input docs, regenerate requirements.md
-/aegis update design         — re-read requirements.md, regenerate design.md
-/aegis update tasks          — re-read design.md + requirements.md, regenerate tasks.md
-/aegis update tests          — re-read all upstream artifacts, regenerate tests.md
+/aegis:update requirements   — re-read input docs, regenerate requirements.md
+/aegis:update design         — re-read requirements.md, regenerate design.md
+/aegis:update tasks          — re-read design.md + requirements.md, regenerate tasks.md
+/aegis:update tests          — re-read all upstream artifacts, regenerate tests.md
 ```
 
 ---
@@ -25,7 +38,7 @@ You are executing the `/aegis update` command. Your job is to re-generate a chos
 Before anything else, read `.aegis/config.yaml` at the project root. If it does not exist, stop immediately and tell the user:
 
 ```
-.aegis/config.yaml not found. Run /aegis init first.
+.aegis/config.yaml not found. Run /aegis:init first.
 ```
 
 If the file exists, load and store all values (project name, language, formalism, inputs, output dir, security_features). All later steps use this configuration.
@@ -142,7 +155,7 @@ If no changes are detected at all, tell the user:
 ```
 No changes detected. <artifact>.md appears to be up to date with its sources.
 
-Run /aegis validate for a full cross-artifact audit.
+Run /aegis:validate for a full cross-artifact audit.
 ```
 
 Then stop.
@@ -281,7 +294,7 @@ Impact analysis:
 ```markdown
 > NEEDS REVIEW — requirements.md was updated on <ISO date>.
 > Affected entries: REQ-012 (new), REQ-005 (changed), SEC-REQ-UPLOAD-01 (new).
-> Re-run `/aegis design`, `/aegis tasks`, and `/aegis tests` to propagate changes,
+> Re-run `/aegis:design`, `/aegis:tasks`, and `/aegis:tests` to propagate changes,
 > or manually review and update this artifact to reflect the new requirements.
 > Remove this notice when the review is complete.
 ```
@@ -312,7 +325,7 @@ Wait for the user's selection.
 
 ```
 Understood. The "NEEDS REVIEW" notices have been written to downstream artifacts.
-Run /aegis update <artifact> when you're ready to propagate changes.
+Run /aegis:update <artifact> when you're ready to propagate changes.
 ```
 
 Stop.
@@ -351,7 +364,7 @@ Update cascade complete.
   Remaining with NEEDS REVIEW notice:
     tests.md  — not updated in this session
 
-  Next step: run /aegis update tests or /aegis tests to complete propagation.
+  Next step: run /aegis:update tests or /aegis:tests to complete propagation.
 ```
 
 If all selected artifacts were updated successfully and no "NEEDS REVIEW" notices remain, display instead:
@@ -359,5 +372,5 @@ If all selected artifacts were updated successfully and no "NEEDS REVIEW" notice
 ```
 Update cascade complete. All artifacts are up to date.
 
-Run /aegis validate for a full cross-artifact audit.
+Run /aegis:validate for a full cross-artifact audit.
 ```

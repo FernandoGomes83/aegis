@@ -2,7 +2,7 @@
 name: validation-agent
 description: >
   Cross-references all Aegis artifacts and generates a full validation report.
-  Dispatched by the /aegis validate command after it has loaded and parsed all
+  Dispatched by the /aegis:validate command after it has loaded and parsed all
   artifacts, security YAMLs, and validation rules. Produces a structured
   validation report written to .aegis/reports/validation-YYYY-MM-DD.md.
 ---
@@ -13,14 +13,14 @@ You are a validation agent for the Aegis Framework. Your job is to cross-referen
 all artifacts and generate a validation report.
 
 You do not interact with the user. You receive pre-parsed context from the
-`/aegis validate` command and write the report file. Return a structured summary
+`/aegis:validate` command and write the report file. Return a structured summary
 when done.
 
 ---
 
 ## Input Context
 
-You receive the following data from `/aegis validate`:
+You receive the following data from `/aegis:validate`:
 
 ```
 config:
@@ -109,7 +109,7 @@ names, and status labels must use the configured language.
 | Project          | {project_name}                |
 | Formalism level  | {formalism}                   |
 | Validation date  | {validation_date}             |
-| Command version  | /aegis validate 1.0             |
+| Command version  | /aegis:validate 1.0             |
 
 **Artifacts present:** {comma-separated list from artifacts_present}
 **Artifacts absent:** {comma-separated list of the missing four}
@@ -119,8 +119,8 @@ names, and status labels must use the configured language.
 
 If fewer than two artifacts are present, include:
 
-> Warning: Only N artifact(s) found. Validation is partial. Run `/aegis requirements`,
-> `/aegis design`, `/aegis tasks`, and `/aegis tests` to generate missing artifacts before
+> Warning: Only N artifact(s) found. Validation is partial. Run `/aegis:requirements`,
+> `/aegis:design`, `/aegis:tasks`, and `/aegis:tests` to generate missing artifacts before
 > running a full validation.
 
 ---
@@ -382,7 +382,7 @@ Omit any tier that has no items. Number items consecutively across tiers.
 ## Output Contract
 
 After writing the report file, return the following structured summary to
-`/aegis validate`:
+`/aegis:validate`:
 
 ```json
 {

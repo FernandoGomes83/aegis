@@ -47,7 +47,7 @@ After making changes:
 
 1. Install locally: `node bin/install.mjs --local`
 2. Start a new Claude Code session in a test project
-3. Run through the flow: `/aegis init` → `/aegis requirements` → etc.
+3. Run through the flow: `/aegis:init` → `/aegis:requirements` → etc.
 4. Verify your changes work as expected
 
 ## Reporting issues
@@ -56,7 +56,7 @@ Open an issue with:
 - What you expected to happen
 - What actually happened
 - Steps to reproduce
-- Which command you were using (`/aegis init`, `/aegis requirements`, etc.)
+- Which command you were using (`/aegis:init`, `/aegis:requirements`, etc.)
 
 ## Code of Conduct
 

@@ -1,9 +1,22 @@
 ---
-name: tasks
+name: aegis:tasks
 description: Generate tasks.md from design + requirements
 ---
 
-# /aegis tasks
+## Bootstrap
+
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# /aegis:tasks
 
 Generate `tasks.md` — an ordered implementation plan derived from `design.md`
 and `requirements.md`, with full bidirectional traceability to all PROP-NNN,
@@ -17,7 +30,7 @@ Before executing any step, verify the following. If any condition is not met,
 stop and report the issue to the user with a clear message.
 
 - `.aegis/config.yaml` must exist at the project root. If missing, tell the user
-  to run `/aegis init` first.
+  to run `/aegis:init` first.
 - `requirements.md` must exist in the configured output directory
   (`output.dir` from config, default: `.aegis/`).
 - `design.md` must exist in the configured output directory.
@@ -185,7 +198,7 @@ present the gaps clearly and ask the user:
 
 > Validation found [N] error(s) in `tasks.md`. Would you like to:
 > a) Fix the errors now (I will patch tasks.md)
-> b) Backtrack to design.md (re-run `/aegis design` to add missing properties)
+> b) Backtrack to design.md (re-run `/aegis:design` to add missing properties)
 > c) Proceed anyway (not recommended — downstream artifacts will have gaps)
 
 If only **warning-severity** checks produce results, report them as an advisory
@@ -221,10 +234,10 @@ Validation
   VAL-TASK-05: [PASS / N gaps / N/A for Light]
   Tests field coverage: [PASS / N props not yet linked]
 
-Next step: /aegis tests
+Next step: /aegis:tests
 ```
 
 Tell the user:
 
-> Review `tasks.md` before proceeding. When you are satisfied, run `/aegis tests`
+> Review `tasks.md` before proceeding. When you are satisfied, run `/aegis:tests`
 > to generate the test specification and RED test files.

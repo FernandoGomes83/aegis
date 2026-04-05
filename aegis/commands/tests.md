@@ -1,9 +1,22 @@
 ---
-name: tests
+name: aegis:tests
 description: Generate tests.md spec + RED test files
 ---
 
-# `/aegis tests` Command
+## Bootstrap
+
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# `/aegis:tests` Command
 
 Generate the `tests.md` artifact and RED (failing) test files for every
 verifiable property, requirement, and security control in the project.
@@ -25,10 +38,10 @@ project root (or the `output.dir` configured in `.aegis/config.yaml`):
 If any of these files is missing, stop and report which files are absent.
 Tell the user which Aegis command to run first:
 
-- Missing `.aegis/config.yaml` → run `/aegis init`
-- Missing `requirements.md` → run `/aegis requirements`
-- Missing `design.md` → run `/aegis design`
-- Missing `tasks.md` → run `/aegis tasks`
+- Missing `.aegis/config.yaml` → run `/aegis:init`
+- Missing `requirements.md` → run `/aegis:requirements`
+- Missing `design.md` → run `/aegis:design`
+- Missing `tasks.md` → run `/aegis:tasks`
 
 ---
 
@@ -353,7 +366,7 @@ manual RED verification is required before proceeding to implementation.
 Output a summary to the user with the following structure:
 
 ```
-## /aegis tests — Complete
+## /aegis:tests — Complete
 
 ### Generated: tests.md
 Path: {output.dir}/tests.md
@@ -387,10 +400,10 @@ Path: {output.dir}/tests.md
 
 ### Next Step
 
-All tests are RED. Start implementation with `/aegis tasks` to see the
+All tests are RED. Start implementation with `/aegis:tasks` to see the
 ordered task list, or begin implementing TASK-001.
 
-Run `/aegis validate` at any time for a full cross-artifact coverage report.
+Run `/aegis:validate` at any time for a full cross-artifact coverage report.
 ```
 
 ---
@@ -399,14 +412,14 @@ Run `/aegis validate` at any time for a full cross-artifact coverage report.
 
 | Condition | Action |
 |-----------|--------|
-| `.aegis/config.yaml` is missing | Stop. Tell user to run `/aegis init` first. |
-| `requirements.md` is missing | Stop. Tell user to run `/aegis requirements` first. |
-| `design.md` is missing | Stop. Tell user to run `/aegis design` first. |
-| `tasks.md` is missing | Stop. Tell user to run `/aegis tasks` first. |
+| `.aegis/config.yaml` is missing | Stop. Tell user to run `/aegis:init` first. |
+| `requirements.md` is missing | Stop. Tell user to run `/aegis:requirements` first. |
+| `design.md` is missing | Stop. Tell user to run `/aegis:design` first. |
+| `tasks.md` is missing | Stop. Tell user to run `/aegis:tasks` first. |
 | `test_framework` not set in config | Ask the user which test framework they use before generating files. |
 | `property_testing` not set in config | Default to the most idiomatic property testing library for the detected language. Inform the user. |
 | No PROP-NNN entries in design.md | Warn but continue — write only E2E, integration, and security tests. |
-| No SEC-PROP-* entries in design.md | Critical error — security properties are mandatory. Tell user to run `/aegis design` again. |
+| No SEC-PROP-* entries in design.md | Critical error — security properties are mandatory. Tell user to run `/aegis:design` again. |
 | Test runner not found in environment | Skip Step 6. Note that manual RED verification is required. |
 | Tests pass unexpectedly | Report the passing tests with investigation notes. Do not mark RED verification as complete. |
 

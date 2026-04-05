@@ -1,11 +1,24 @@
 ---
-name: status
+name: aegis:status
 description: Show current Aegis state, coverage, next steps
 ---
 
-# `/aegis status` — Show Aegis Project State
+## Bootstrap
 
-You are executing the `/aegis status` command. Your job is to read the project configuration and all available Aegis artifacts, compute a lightweight coverage snapshot, and display a concise status report. This command is **read-only** — it does not generate, modify, or delete any file.
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# `/aegis:status` — Show Aegis Project State
+
+You are executing the `/aegis:status` command. Your job is to read the project configuration and all available Aegis artifacts, compute a lightweight coverage snapshot, and display a concise status report. This command is **read-only** — it does not generate, modify, or delete any file.
 
 Follow every step in order. Complete all steps before printing output. Do not ask the user any questions.
 
@@ -18,7 +31,7 @@ Look for `.aegis/config.yaml` at the project root.
 - If the file does **not** exist, print exactly the following and stop:
 
   ```
-  Aegis not initialized. Run /aegis init to get started.
+  Aegis not initialized. Run /aegis:init to get started.
   ```
 
 - If the file exists, read it fully and extract:
@@ -78,7 +91,7 @@ For each artifact file that exists, parse its content and collect the following 
 
 ## Step 4: Quick Coverage Check
 
-This step only runs if **two or more** artifacts exist. It computes a lightweight coverage percentage without doing full cross-artifact validation (that is reserved for `/aegis validate`).
+This step only runs if **two or more** artifacts exist. It computes a lightweight coverage percentage without doing full cross-artifact validation (that is reserved for `/aegis:validate`).
 
 ### Coverage Rule
 
@@ -125,7 +138,7 @@ An artifact is **stale** if its upstream source was modified **after** the artif
 
 For each artifact that exists, compare its last-modified timestamp against the last-modified timestamp of each of its upstream sources. If a source is newer than the artifact, mark the artifact as stale and record which source triggered it (e.g., "requirements.md added since last generation").
 
-Also check if the artifact contains a `> NEEDS REVIEW` notice at the top (from `/aegis update`). If present, mark it as stale regardless of timestamps.
+Also check if the artifact contains a `> NEEDS REVIEW` notice at the top (from `/aegis:update`). If present, mark it as stale regardless of timestamps.
 
 ---
 
@@ -135,13 +148,13 @@ Based on which artifacts exist and their stale status, determine the single most
 
 | Situation                                       | Recommendation                                              |
 |-------------------------------------------------|-------------------------------------------------------------|
-| No artifacts exist                              | `/aegis requirements`                                         |
-| Only requirements.md exists                     | `/aegis design`                                               |
-| requirements.md + design.md exist              | `/aegis tasks` and/or `/aegis tests`                            |
-| requirements.md + design.md + tasks.md exist   | `/aegis tests`                                                |
-| All 4 artifacts exist, none stale              | `/aegis validate` or start implementation                     |
-| Any artifact is stale                           | `/aegis update [stale artifact name]` to propagate changes    |
-| Coverage < 60%                                  | `/aegis validate` to find and fix coverage gaps               |
+| No artifacts exist                              | `/aegis:requirements`                                         |
+| Only requirements.md exists                     | `/aegis:design`                                               |
+| requirements.md + design.md exist              | `/aegis:tasks` and/or `/aegis:tests`                            |
+| requirements.md + design.md + tasks.md exist   | `/aegis:tests`                                                |
+| All 4 artifacts exist, none stale              | `/aegis:validate` or start implementation                     |
+| Any artifact is stale                           | `/aegis:update [stale artifact name]` to propagate changes    |
+| Coverage < 60%                                  | `/aegis:validate` to find and fix coverage gaps               |
 
 If multiple recommendations apply, use the first matching rule in the table above (top to bottom).
 
@@ -171,7 +184,7 @@ Artifacts:
   [icon] tasks.md          ([completed count]/[total count] tasks complete, last updated [date])
   [icon] tests.md          ([TEST-REQ count] req tests, [TEST-PROP count] prop tests, [TEST-SEC count] security tests, last updated [date])
 
-Coverage: [N]% (see /aegis validate for details)
+Coverage: [N]% (see /aegis:validate for details)
 Next step: [recommendation]
 ```
 
@@ -206,9 +219,9 @@ Next step: [recommendation]
 
 - This command does not invoke any sub-agent. All parsing is done inline by you, the skill.
 - Use the Read tool to read artifact files. Use the Bash tool only for `stat` calls to get file modification timestamps and for `mkdir` if needed.
-- Do not validate artifact content beyond the pattern-matching described in Step 3. Deep validation is reserved for `/aegis validate`.
+- Do not validate artifact content beyond the pattern-matching described in Step 3. Deep validation is reserved for `/aegis:validate`.
 - If a file read fails (e.g., the file is unreadable), treat it as not existing and mark it `❌`.
-- The counts in Step 3 are approximate — they rely on ID pattern matching, not full parsing. This is intentional: `/aegis status` must be fast. Exact counts are the domain of `/aegis validate`.
+- The counts in Step 3 are approximate — they rely on ID pattern matching, not full parsing. This is intentional: `/aegis:status` must be fast. Exact counts are the domain of `/aegis:validate`.
 - Regex patterns to use for ID detection (apply to each line):
   - REQ: `^REQ-\d{3}:`
   - SEC-REQ: `^SEC-REQ-[A-Z0-9_-]+:`

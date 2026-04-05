@@ -68,18 +68,32 @@ if (scope === "local") {
   }
 }
 
-const commandFile = join(claudeBase, "commands", "aegis.md");
+const commandsDir = join(claudeBase, "commands");
 const frameworkDir = join(claudeBase, "aegis");
 
-// Create commands directory if needed
-mkdirSync(join(claudeBase, "commands"), { recursive: true });
+// Sub-commands that get installed as aegis:<name>.md
+const subCommands = [
+  "init",
+  "requirements",
+  "design",
+  "tasks",
+  "tests",
+  "validate",
+  "update",
+  "status",
+];
 
-// Remove previous installation (current structure)
+// Create commands directory if needed
+mkdirSync(commandsDir, { recursive: true });
+
+// Remove previous installation
 if (existsSync(frameworkDir)) {
   rmSync(frameworkDir, { recursive: true });
 }
-if (existsSync(commandFile)) {
-  rmSync(commandFile);
+// Remove old monolithic command file and colon-prefixed files
+for (const file of ["aegis.md", ...subCommands.map((c) => `aegis:${c}.md`)]) {
+  const fp = join(commandsDir, file);
+  if (existsSync(fp)) rmSync(fp);
 }
 
 // Remove old plugins-based installation if present
@@ -89,12 +103,20 @@ if (existsSync(oldPluginsDir)) {
   console.log("  Removed old installation from plugins/aegis/.");
 }
 
-// Install skill entry point as a Claude Code command
-cpSync(join(source, "skill.md"), commandFile);
+// Install command files
+// Index file: /aegis
+cpSync(join(source, "skill.md"), join(commandsDir, "aegis.md"));
+// Sub-commands: /aegis:<name>
+for (const cmd of subCommands) {
+  cpSync(
+    join(source, "commands", `${cmd}.md`),
+    join(commandsDir, `aegis:${cmd}.md`)
+  );
+}
 
-// Install framework files
+// Install framework + shared + agents (no longer install commands/ to aegis/)
 mkdirSync(frameworkDir, { recursive: true });
-for (const dir of ["framework", "commands", "agents"]) {
+for (const dir of ["framework", "shared", "agents"]) {
   const src = join(source, dir);
   if (existsSync(src)) {
     cpSync(src, join(frameworkDir, dir), { recursive: true });
@@ -103,24 +125,24 @@ for (const dir of ["framework", "commands", "agents"]) {
 
 const scopeLabel = scope === "local" ? "project" : "global";
 console.log(`  Installed (${scopeLabel}):`);
-console.log(`    Skill:     ${commandFile}`);
+console.log(`    Commands:  ${commandsDir}/aegis*.md (${subCommands.length + 1} files)`);
 console.log(`    Framework: ${frameworkDir}/`);
 console.log("");
 console.log("  Usage:");
 console.log("    1. Start a new Claude Code session");
-console.log("    2. Run /aegis init in your project");
+console.log("    2. Run /aegis:init in your project");
 console.log("    3. Follow the guided flow:");
-console.log("       /aegis requirements → /aegis design → /aegis tasks → /aegis tests");
+console.log("       /aegis:requirements → /aegis:design → /aegis:tasks → /aegis:tests");
 console.log("");
 console.log("  Commands:");
-console.log("    /aegis init          Set up Aegis in your project");
-console.log("    /aegis requirements  Generate requirements.md");
-console.log("    /aegis design        Generate design.md");
-console.log("    /aegis tasks         Generate tasks.md");
-console.log("    /aegis tests         Generate tests.md + RED test files");
-console.log("    /aegis validate      Full validation report");
-console.log("    /aegis update        Update artifacts + propagate changes");
-console.log("    /aegis status        Show current state");
+console.log("    /aegis:init          Set up Aegis in your project");
+console.log("    /aegis:requirements  Generate requirements.md");
+console.log("    /aegis:design        Generate design.md");
+console.log("    /aegis:tasks         Generate tasks.md");
+console.log("    /aegis:tests         Generate tests.md + RED test files");
+console.log("    /aegis:validate      Full validation report");
+console.log("    /aegis:update        Update artifacts + propagate changes");
+console.log("    /aegis:status        Show current state");
 console.log("");
 console.log("  Tip: use npx aegis-sdd --global or npx aegis-sdd --local to skip the prompt.");
 console.log("");

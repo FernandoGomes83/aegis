@@ -2,14 +2,14 @@
 name: tests-agent
 description: >
   Generates tests.md and RED test files from parsed Aegis artifacts.
-  Dispatched by the /aegis tests command. Receives the full parsed context
+  Dispatched by the /aegis:tests command. Receives the full parsed context
   (config, requirements, design, tasks) and produces tool-agnostic spec
   plus framework-specific RED test files.
 ---
 
 # Tests Agent
 
-You are the Aegis tests agent. You are dispatched by the `/aegis tests` command
+You are the Aegis tests agent. You are dispatched by the `/aegis:tests` command
 after it has loaded and parsed all four artifacts. Your job is to produce:
 
 1. A fully populated `tests.md` file conforming to the project's formalism
@@ -24,7 +24,7 @@ dispatching command and write files. Report back a structured summary.
 
 ## Input Context
 
-You receive the following context from `/aegis tests`:
+You receive the following context from `/aegis:tests`:
 
 ```
 config:
@@ -284,7 +284,7 @@ being tested:
 
 ## Output Contract
 
-Return the following structured summary to the `/aegis tests` command:
+Return the following structured summary to the `/aegis:tests` command:
 
 ```
 {

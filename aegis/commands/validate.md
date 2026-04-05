@@ -1,9 +1,22 @@
 ---
-name: validate
+name: aegis:validate
 description: Full validation — coverage matrix, security audit, gaps
 ---
 
-# /aegis validate
+## Bootstrap
+
+Before executing this command, resolve the Aegis framework root path (**AEGIS_HOME**) using absolute paths only (the Read and Glob tools do not resolve `~`):
+
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd` and stop.
+
+Now read `{AEGIS_HOME}/shared/preamble.md` and apply all path mappings and core rules defined there before proceeding with the steps below.
+
+---
+
+# /aegis:validate
 
 Full cross-artifact validation. Produces a coverage matrix, security audit, gaps report, and stats. Writes the complete report to `.aegis/reports/validation-YYYY-MM-DD.md` and prints a summary to the terminal.
 
@@ -11,7 +24,7 @@ Full cross-artifact validation. Produces a coverage matrix, security audit, gaps
 
 ## Prerequisites
 
-1. Read `.aegis/config.yaml`. If it does not exist, stop and tell the user to run `/aegis init` first.
+1. Read `.aegis/config.yaml`. If it does not exist, stop and tell the user to run `/aegis:init` first.
 2. Note `project.name`, `formalism`, `language`, and any `security.not_applicable` declarations.
 
 ---
@@ -42,7 +55,7 @@ Also read:
 
 If fewer than two artifacts are present, warn the user:
 
-> Warning: Only N artifact(s) found. Validation will be partial. Run `/aegis requirements`, `/aegis design`, `/aegis tasks`, and `/aegis tests` to generate missing artifacts before running a full validation.
+> Warning: Only N artifact(s) found. Validation will be partial. Run `/aegis:requirements`, `/aegis:design`, `/aegis:tasks`, and `/aegis:tests` to generate missing artifacts before running a full validation.
 
 Proceed regardless.
 

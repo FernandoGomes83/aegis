@@ -98,7 +98,7 @@ Error cases:
 
 <!-- TEST-SEC-* entries are generated automatically from SEC-PROP-* entries in design.md. -->
 <!-- At Formal level, each TEST-SEC-* must be at integration or contract test level where applicable. -->
-<!-- Do not add or remove them manually. Re-run `/aegis tests` to regenerate this section. -->
+<!-- Do not add or remove them manually. Re-run `/aegis:tests` to regenerate this section. -->
 
 > Reference: SECURITY_UNIVERSAL §14 checklist must be verified for every feature before
 > it is declared production-ready. See `aegis/framework/security/SECURITY_UNIVERSAL.md`.

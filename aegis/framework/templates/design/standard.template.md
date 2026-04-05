@@ -90,7 +90,7 @@ Description: {{this.description}}
 ---
 
 <!-- AUTO-GENERATED SECURITY PROPERTIES — do not edit this section manually.
-     Re-run `/aegis design` to refresh. Source: aegis/framework/security/security-properties.yaml -->
+     Re-run `/aegis:design` to refresh. Source: aegis/framework/security/security-properties.yaml -->
 
 ## Security Properties
 
