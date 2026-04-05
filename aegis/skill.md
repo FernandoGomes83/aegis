@@ -18,6 +18,7 @@ Generate and maintain four structured software design artifacts — **requiremen
 | `/aegis:init` | Initialize Aegis in a project — set level, language, stack, inputs |
 | `/aegis:requirements` | Generate requirements.md from input docs |
 | `/aegis:design` | Generate design.md from requirements |
+| `/aegis:ui-design` | Generate ui-design.md — frontend/UI design specification |
 | `/aegis:tasks` | Generate tasks.md from design + requirements |
 | `/aegis:tests` | Generate tests.md + RED test files |
 | `/aegis:validate` | Full validation — coverage matrix, security audit, gaps |

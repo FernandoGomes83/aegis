@@ -61,10 +61,16 @@ Read `<output.dir>/design.md`. Extract and index:
 - All **SEC-PROP-*** IDs and which SEC-REQ-* IDs they derive from
 - All named **components** (component sections / design areas)
 
+If `<output.dir>/ui-design.md` exists, also read and extract:
+- All **UI-NNN** IDs, their titles, and which REQ-NNN or PROP-NNN IDs they derive from
+- Design system specifications (for frontend implementation tasks)
+- Page/screen specifications (for page-level implementation tasks)
+
 Build a dependency map: for each PROP-NNN, note which other PROP-NNN entries
 it depends on (based on component ownership and data-flow descriptions in
 design.md). For each SEC-PROP-*, note which SEC-PROP-* entries it depends on
-(e.g., authentication must precede IDOR enforcement).
+(e.g., authentication must precede IDOR enforcement). For each UI-NNN, note
+which PROP-NNN or REQ-NNN it depends on.
 
 ---
 
@@ -89,7 +95,12 @@ implementation dependencies and are not configurable by the user:
 4. **Business logic before UI** — service-layer and API handler tasks must
    precede any frontend component or page that calls them.
 
-5. **Integrations after core logic** — third-party service integrations
+5. **Design system before UI components** — if `ui-design.md` exists, tasks
+   for implementing the design system (tokens, theme, global styles) must
+   precede individual UI component tasks. UI-NNN entries are implemented in
+   order: design system → shared components → page-specific components → pages.
+
+6. **Integrations after core logic** — third-party service integrations
    (payment processors, email providers, storage, analytics) come after the
    internal logic they wrap is stable.
 

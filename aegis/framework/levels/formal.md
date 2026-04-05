@@ -270,6 +270,119 @@ Error handling:
 
 ---
 
+## UI Design Format (Optional)
+
+### Structure
+
+- **Comprehensive design vision**: rationale, key principles, visual positioning (competitive analysis of visual approach), mood & atmosphere description.
+- **Complete design token system**: all values specified as CSS custom properties with semantic naming. Direct use of raw values in implementation is prohibited — always reference the token. Includes responsive type scale adjustments per breakpoint.
+- **Exhaustive component specifications** (UI-NNN): each entry includes visual description with pixel-precise values, ALL states including edge cases (truncation behavior, overflow, extreme content lengths), responsive behavior per breakpoint, animation choreography (trigger, property, from→to, duration, easing, delay), full accessibility compliance matrix mapping each component to WCAG success criteria, and a design QA checklist.
+- **Detailed page specifications**: layout structure, visual hierarchy description, responsive layout per breakpoint, page load sequence (what loads first, skeleton strategy, stagger order), page-level interactions, performance targets.
+- **Navigation & flow**: global navigation pattern with route transition map.
+- **Accessibility compliance matrix**: WCAG criterion × UI-NNN mapping table.
+- **Visual regression test specification**: what to capture, viewport, state, pixel tolerance.
+- **Design QA checklist**: implementation verification checklist.
+
+### Example
+
+```markdown
+## Design Vision
+
+A precision-engineered fintech interface that communicates institutional trust
+through restrained typography, a near-monochrome palette with a single teal
+accent, and surgical use of whitespace. Every pixel serves a purpose.
+
+### Design Principles
+1. **Institutional precision** — Alignment to a 4px grid with zero tolerance.
+2. **Data density without noise** — Tables and charts convey information without
+   visual clutter; whitespace separates concerns.
+3. **Progressive disclosure** — Primary data visible immediately; detail on demand.
+4. **Accessible by default** — WCAG AAA on all critical financial data displays.
+
+### Visual Positioning
+Unlike consumer-facing fintech apps (Robinhood's playful gradients, Revolut's
+dark-mode boldness), this interface targets institutional users who expect the
+visual sobriety of Bloomberg Terminal married to the clarity of Stripe's
+documentation. No decorative elements. No illustrations. Data speaks.
+
+### Mood & Atmosphere
+If this interface were a physical space, it would be a Swiss private bank lobby:
+travertine floors, precisely spaced Mies chairs, a single fresh orchid. Nothing
+extra, nothing missing.
+
+## Design System
+
+### Typography
+
+**Design Tokens:**
+
+| Token                    | Value                | CSS Custom Property         |
+|--------------------------|----------------------|-----------------------------|
+| --font-display           | Söhne Breit          | --font-display              |
+| --font-body              | Söhne                | --font-body                 |
+| --font-mono              | Söhne Mono           | --font-mono                 |
+| --type-display-size      | 40px                 | --type-display-size         |
+| --type-display-weight    | 600                  | --type-display-weight       |
+| --type-display-lh        | 1.1                  | --type-display-lh           |
+| --type-display-ls        | -0.03em              | --type-display-ls           |
+| --type-body-size         | 15px                 | --type-body-size            |
+| --type-body-weight       | 400                  | --type-body-weight          |
+| --type-body-lh           | 1.6                  | --type-body-lh              |
+
+**Responsive Type Scale Adjustments:**
+
+| Level   | Mobile  | Tablet  | Desktop |
+|---------|---------|---------|---------|
+| Display | 28px    | 34px    | 40px    |
+| H1      | 24px    | 28px    | 32px    |
+| Body    | 14px    | 15px    | 15px    |
+
+**Truncation Rules:**
+- Single-line fields: ellipsis after container width minus 8px padding
+- Multi-line: max 3 lines with -webkit-line-clamp, fade-out on last line
+- Currency amounts: NEVER truncate — reduce font size to --type-body-sm if needed
+
+### Component Specifications
+
+### UI-014: Transaction Row
+Derives from: REQ-014
+
+**Visual Description:**
+Full-width row, 56px height, 16px horizontal padding. Left: status indicator
+(8px circle, color by status token). Center: merchant name in --font-body 15px/500,
+timestamp in --font-mono 12px/400 var(--color-muted). Right: amount in --font-mono
+15px/600, aligned right. Bottom: 1px solid var(--color-border-subtle).
+
+**States:**
+
+| State    | Visual Changes                                              |
+|----------|-------------------------------------------------------------|
+| Default  | As described                                                |
+| Hover    | Background: var(--color-surface-hover); transition: 120ms ease |
+| Active   | Background: var(--color-surface-active)                     |
+| Focus    | 2px inset outline var(--color-focus), 0px offset            |
+| Selected | Left border: 2px solid var(--color-primary); padding-left: 14px |
+| Loading  | Skeleton: 3 rectangles (status circle + 2 text blocks), pulse animation 1.5s ease-in-out infinite |
+
+**Edge Cases:**
+- Merchant name > 40 chars: single-line truncation with ellipsis
+- Negative amounts (refunds): prefix with "−" (U+2212), color: var(--color-success)
+- Disputed: status circle = var(--color-warning), row opacity: 0.7
+- Amount > 10 digits: reduce font to 13px, maintain right-alignment
+
+**Accessibility Compliance:**
+
+| WCAG Criterion | Requirement               | Implementation                              |
+|----------------|---------------------------|---------------------------------------------|
+| 1.3.1          | Info and relationships    | role="row", semantic cells with role="cell" |
+| 1.4.3          | Contrast (minimum)        | Text: 7.2:1 on surface (exceeds AAA)       |
+| 2.1.1          | Keyboard                  | Tab navigates rows, Enter opens detail      |
+| 2.4.7          | Focus visible             | 2px inset outline, always visible           |
+| 4.1.2          | Name, role, value         | aria-label: "{merchant} {amount} {date}"    |
+```
+
+---
+
 ## Tasks Format
 
 ### Structure
