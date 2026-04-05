@@ -31,8 +31,8 @@ npx aegis-sdd
 
 The installer asks where to install:
 
-- **Global** (`~/.claude/plugins/aegis/`) — available in all your projects
-- **Local** (`.claude/plugins/aegis/`) — this project only
+- **Global** (`~/.claude/commands/aegis.md` + `~/.claude/aegis/`) — available in all your projects
+- **Local** (`.claude/commands/aegis.md` + `.claude/aegis/`) — this project only
 
 Or skip the prompt with flags:
 
