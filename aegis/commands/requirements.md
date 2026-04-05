@@ -13,14 +13,14 @@ Generate `requirements.md` from the project's input documents. Follow every step
 
 Before starting, verify:
 
-1. `aegis.config.yaml` exists at the project root. If it does not, stop immediately and tell the user to run `/aegis init` first.
-2. The `inputs` list in `aegis.config.yaml` contains at least one entry. If the list is empty or absent, warn the user that requirements will contain security content only, and ask whether they want to continue or add input docs first.
+1. `.aegis/config.yaml` exists at the project root. If it does not, stop immediately and tell the user to run `/aegis init` first.
+2. The `inputs` list in `.aegis/config.yaml` contains at least one entry. If the list is empty or absent, warn the user that requirements will contain security content only, and ask whether they want to continue or add input docs first.
 
 ---
 
 ## Step 1: Load Config
 
-Read `aegis.config.yaml`. Extract and hold in working memory:
+Read `.aegis/config.yaml`. Extract and hold in working memory:
 
 - `project.name` — used in the artifact header.
 - `project.language` — determines which i18n file to load (`en` → `aegis/framework/i18n/en.yaml`, `pt-BR` → `aegis/framework/i18n/pt-br.yaml`). Default to `en` if not set.
@@ -36,7 +36,7 @@ Load the level rules file for the configured formalism level from `aegis/framewo
 
 ## Step 2: Read All Input Docs
 
-Read every file listed under `inputs` in `aegis.config.yaml`. For `type: auto` entries pointing to a directory, read all files found in that directory.
+Read every file listed under `inputs` in `.aegis/config.yaml`. For `type: auto` entries pointing to a directory, read all files found in that directory.
 
 From each input document, extract and categorize:
 
@@ -71,7 +71,7 @@ Filter the entries: include all categories where `applies_when` is `always`, plu
 
 If the project has its own `SECURITY.md` or a security-type input doc, read it. Merge its security requirements into the filtered set by **adding** any requirements it introduces. Never reduce, remove, or weaken any requirement from `security-requirements.yaml`.
 
-If `aegis.config.yaml` has `security.extra_requirements` entries, append them to the set. They are additive only.
+If `.aegis/config.yaml` has `security.extra_requirements` entries, append them to the set. They are additive only.
 
 Hold the final filtered SEC-REQ set in working memory for use in Steps 6 and 7.
 
@@ -116,7 +116,7 @@ Dispatch to `aegis/agents/requirements-agent.md` with the following context pack
 - **i18n** — the loaded label set from Step 1.
 - **sec_reqs** — the filtered SEC-REQ set from Step 3.
 - **level_rules** — the level rules loaded in Step 1, specifically the requirements format section.
-- **project_name** — from `aegis.config.yaml`.
+- **project_name** — from `.aegis/config.yaml`.
 
 The agent must produce a complete `requirements.md` artifact. Instruct the agent to:
 
@@ -127,17 +127,17 @@ The agent must produce a complete `requirements.md` artifact. Instruct the agent
 - Use i18n strings for all section headings and labels.
 - Include an artifact header with: project name, generation date (2026-04-04), formalism level, and language.
 
-Write the output to `aegis/requirements.md` (relative to the project root, using the `output.dir` from `aegis.config.yaml`, defaulting to `aegis/`).
+Write the output to `.aegis/requirements.md` (relative to the project root, using the `output.dir` from `.aegis/config.yaml`, defaulting to `.aegis/`).
 
 ---
 
 ## Step 7: Light Validation
 
-After the agent writes `aegis/requirements.md`, run the `after_requirements` checks defined in `aegis/framework/validation/rules.yaml`.
+After the agent writes `.aegis/requirements.md`, run the `after_requirements` checks defined in `aegis/framework/validation/rules.yaml`.
 
 Execute each check in order:
 
-- **VAL-REQ-01** (`every_input_doc_has_derived_req`) — verify that each input document listed in `aegis.config.yaml` has at least one REQ-NNN or SEC-REQ-* entry with a matching `Derives from:` citation. Severity: warning.
+- **VAL-REQ-01** (`every_input_doc_has_derived_req`) — verify that each input document listed in `.aegis/config.yaml` has at least one REQ-NNN or SEC-REQ-* entry with a matching `Derives from:` citation. Severity: warning.
 - **VAL-REQ-02** (`security_requirements_injected`) — verify that `requirements.md` contains a SEC-REQ-* section with at least five entries and that the unconditionally required keys are all present (`SEC-REQ-INPUT-01`, `SEC-REQ-HEADERS-01`, `SEC-REQ-DEPS-01`, plus at minimum `SEC-REQ-IDOR-01` if `has_authenticated_resources` was detected). Severity: error — blocks advancement.
 - **VAL-REQ-03** (`no_duplicate_req_ids`) — verify that all REQ-NNN and SEC-REQ-* identifiers in `requirements.md` are unique. Report each duplicate with its line number. Severity: error — blocks advancement.
 - **VAL-REQ-04** (`acceptance_criteria_present`) — if formalism level is `standard` or `formal`, verify that every REQ-NNN entry includes at least one SHALL/WHEN/THEN acceptance criterion. Severity: warning.
@@ -165,7 +165,7 @@ requirements.md generated.
   Language                : <en|pt-BR>
   Validation              : <PASSED | PASSED WITH WARNINGS | FAILED — see Validation Notes>
 
-Output written to: aegis/requirements.md
+Output written to: .aegis/requirements.md
 ```
 
 Then suggest the next step:

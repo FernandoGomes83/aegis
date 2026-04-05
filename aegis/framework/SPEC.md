@@ -399,13 +399,13 @@ The framework accepts input documents to generate requirements. These are projec
 | business-plan  | PLANO_DE_NEGOCIO.md       | Market context, competitive landscape, revenue model, success metrics    |
 | security       | SECURITY_UNIVERSAL.md     | Security guidelines, threat model, compliance requirements               |
 | api-docs       | api-spec.yaml / api.md    | External API contracts, webhook schemas, third-party integration details |
-| auto           | (any file in aegis/inputs/) | Automatically detected and classified by the requirements agent          |
+| auto           | (any file in .aegis/inputs/) | Automatically detected and classified by the requirements agent          |
 
 ### Input Document Handling
 
 - Input documents are never modified by the framework.
 - They are read-only references used during requirements generation.
-- They must be listed in `aegis.config.yaml` under the `inputs` key, or placed in `aegis/inputs/` for auto-detection.
+- They must be listed in `.aegis/config.yaml` under the `inputs` key, or placed in `.aegis/inputs/` for auto-detection.
 - The requirements agent extracts relevant information and cites the source document in the generated requirement where applicable.
 - Multiple input documents of the same type are merged by the agent. Conflicts between documents are flagged as warnings during requirements generation, not errors.
 
@@ -417,24 +417,26 @@ The framework ships starter templates for common input document types in `aegis/
 
 ## 8. Configuration
 
-Projects configure the Aegis framework via a `aegis.config.yaml` file at the project root.
+Projects configure the Aegis framework via a `.aegis/config.yaml` file at the project root.
 
 ### File Location
 
 ```
 <project-root>/
-  aegis.config.yaml   <-- framework reads this
-  aegis/              <-- generated artifacts live here
+  .aegis/                <-- all Aegis project files live here
+    config.yaml          <-- framework configuration
     requirements.md
     design.md
     tasks.md
     tests.md
+    tests/               <-- RED test files
+    reports/             <-- validation reports
 ```
 
 ### Schema
 
 ```yaml
-# aegis.config.yaml
+# .aegis/config.yaml
 version: "1"
 
 project:
@@ -450,12 +452,12 @@ inputs:
     type: brand-guide
   - path: docs/SECURITY_UNIVERSAL.md
     type: security
-  # "auto" entries: any file in aegis/inputs/ is auto-detected
-  - path: aegis/inputs/
+  # "auto" entries: any file in ..aegis/inputs/ is auto-detected
+  - path: ..aegis/inputs/
     type: auto
 
 output:
-  dir: aegis/                   # where artifacts are written (default: aegis/)
+  dir: .aegis/                   # where artifacts are written (default: .aegis/)
 
 # Optional overrides — advanced use only
 # security:
@@ -519,13 +521,14 @@ When the `/aegis update` command detects that an artifact has changed, it writes
 
 ```
 <project-root>/
-  aegis.config.yaml
-
-  aegis/
+  .aegis/
+    config.yaml
     requirements.md
     design.md
     tasks.md
     tests.md
+    tests/                    <-- RED test files
+    reports/                  <-- validation reports
 
 aegis/                        (framework installation, not per-project)
   framework/

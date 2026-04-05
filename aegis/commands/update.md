@@ -22,10 +22,10 @@ You are executing the `/aegis update` command. Your job is to re-generate a chos
 
 ## Pre-flight: Read Configuration
 
-Before anything else, read `aegis.config.yaml` at the project root. If it does not exist, stop immediately and tell the user:
+Before anything else, read `.aegis/config.yaml` at the project root. If it does not exist, stop immediately and tell the user:
 
 ```
-aegis.config.yaml not found. Run /aegis init first.
+.aegis/config.yaml not found. Run /aegis init first.
 ```
 
 If the file exists, load and store all values (project name, language, formalism, inputs, output dir, security_features). All later steps use this configuration.
@@ -63,7 +63,7 @@ Wait for the user's selection. Map it to the artifact name before continuing.
 
 ## Step 2: Read Current State
 
-Read the existing artifact file from the output directory declared in `aegis.config.yaml` (default: `aegis/`).
+Read the existing artifact file from the output directory declared in `.aegis/config.yaml` (default: `.aegis/`).
 
 If the artifact file does not exist, tell the user:
 
@@ -78,10 +78,10 @@ Then stop.
 
 | Artifact being updated | Sources to read |
 |---|---|
-| requirements.md | All input documents listed in `aegis.config.yaml` under `inputs` |
-| design.md | `aegis/requirements.md` |
-| tasks.md | `aegis/design.md` and `aegis/requirements.md` |
-| tests.md | `aegis/design.md` and `aegis/requirements.md` |
+| requirements.md | All input documents listed in `.aegis/config.yaml` under `inputs` |
+| design.md | `.aegis/requirements.md` |
+| tasks.md | `.aegis/design.md` and `.aegis/requirements.md` |
+| tests.md | `.aegis/design.md` and `.aegis/requirements.md` |
 
 If a source file is missing, warn the user:
 
@@ -101,7 +101,7 @@ Compare the content of the current sources against the state recorded in the exi
 - New REQ-NNN IDs that have no corresponding derivation in design.md
 - REQ-NNN IDs present in requirements.md but missing from current input docs content
 - Acceptance criteria or user story text that differs from what is summarized in requirements.md
-- New SEC-REQ-* that are now applicable based on `security_features` in `aegis.config.yaml` but are absent from requirements.md
+- New SEC-REQ-* that are now applicable based on `security_features` in `.aegis/config.yaml` but are absent from requirements.md
 
 **For design.md**, compare requirements.md to the existing design:
 - REQ-NNN or SEC-REQ-* entries in requirements.md with no `Derives from` link in any PROP-NNN or SEC-PROP-*
@@ -165,7 +165,7 @@ Regenerating requirements.md.
 Pre-filling from existing artifact:
   - Formalism level: standard (from config)
   - Language: en (from config)
-  - Stack context: Next.js + PostgreSQL (from aegis.config.yaml)
+  - Stack context: Next.js + PostgreSQL (from .aegis/config.yaml)
   - 11 existing requirements preserved without changes
 
 New questions for changed/new content:
@@ -192,7 +192,7 @@ Silently preserve these sections by appending them at the bottom of the regenera
 **Write the updated artifact.** Overwrite the existing file at its current path. Do not print the full artifact content to the user — confirm the write with a single line:
 
 ```
-Written: aegis/requirements.md
+Written: .aegis/requirements.md
 ```
 
 **Run light validation.** After writing, run the same light validation checks that the original generation command would run (as defined in `aegis/framework/SPEC.md §6`). Report the results inline:

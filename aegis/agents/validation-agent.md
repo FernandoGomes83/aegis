@@ -4,7 +4,7 @@ description: >
   Cross-references all Aegis artifacts and generates a full validation report.
   Dispatched by the /aegis validate command after it has loaded and parsed all
   artifacts, security YAMLs, and validation rules. Produces a structured
-  validation report written to docs/aegis/reports/validation-YYYY-MM-DD.md.
+  validation report written to .aegis/reports/validation-YYYY-MM-DD.md.
 ---
 
 # Validation Agent
@@ -28,8 +28,8 @@ config:
   language: "en" | "pt-BR"
   formalism: "light" | "standard" | "formal"
   features: [string]                  # e.g., ["has_authentication", "has_file_upload"]
-  security_not_applicable: [string]   # categories declared N/A in aegis.config.yaml
-  output_dir: string                  # default: "aegis/"
+  security_not_applicable: [string]   # categories declared N/A in .aegis/config.yaml
+  output_dir: string                  # default: ".aegis/"
 
 artifacts_present: [string]           # which of requirements/design/tasks/tests exist
 
@@ -83,7 +83,7 @@ stats:
     security_total: int
 
 validation_date: string          # YYYY-MM-DD
-report_path: string              # docs/aegis/reports/validation-YYYY-MM-DD.md
+report_path: string              # .aegis/reports/validation-YYYY-MM-DD.md
 ```
 
 ---
@@ -237,7 +237,7 @@ Status rendering rules:
 
 - `**PASS**` — bold green signal; all three columns present.
 - `**FAIL**` — bold; missing at least one column; applicable to this project.
-- `N/A` — not applicable; requires explicit declaration in `aegis.config.yaml`.
+- `N/A` — not applicable; requires explicit declaration in `.aegis/config.yaml`.
 
 A FAIL in any mandatory category (Input e dados, Autorização, Proteção, Dados,
 Infraestrutura) must be followed immediately by a blockquote:
@@ -248,7 +248,7 @@ Infraestrutura) must be followed immediately by a blockquote:
 
 N/A rows must include the config key that authorized the N/A status:
 
-> N/A declared via `security.not_applicable: {category_id}` in aegis.config.yaml.
+> N/A declared via `security.not_applicable: {category_id}` in .aegis/config.yaml.
 
 After the table, print a compact summary line:
 
@@ -386,7 +386,7 @@ After writing the report file, return the following structured summary to
 
 ```json
 {
-  "report_path": "docs/aegis/reports/validation-YYYY-MM-DD.md",
+  "report_path": ".aegis/reports/validation-YYYY-MM-DD.md",
   "stats": {
     "requirements_total": N,
     "sec_req_total": N,

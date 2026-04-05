@@ -13,11 +13,11 @@ verifiable property, requirement, and security control in the project.
 ## Prerequisites
 
 Before running this command, verify that the following files exist in the
-project root (or the `output.dir` configured in `aegis.config.yaml`):
+project root (or the `output.dir` configured in `.aegis/config.yaml`):
 
 | File | Purpose |
 |------|---------|
-| `aegis.config.yaml` | Framework configuration — stack, test_framework, property_testing |
+| `.aegis/config.yaml` | Framework configuration — stack, test_framework, property_testing |
 | `requirements.md` | Source of REQ-NNN and SEC-REQ-* IDs and acceptance criteria |
 | `design.md` | Source of PROP-NNN, SEC-PROP-* IDs and interface definitions |
 | `tasks.md` | Source of TASK-NNN IDs and subtask breakdowns |
@@ -25,7 +25,7 @@ project root (or the `output.dir` configured in `aegis.config.yaml`):
 If any of these files is missing, stop and report which files are absent.
 Tell the user which Aegis command to run first:
 
-- Missing `aegis.config.yaml` → run `/aegis init`
+- Missing `.aegis/config.yaml` → run `/aegis init`
 - Missing `requirements.md` → run `/aegis requirements`
 - Missing `design.md` → run `/aegis design`
 - Missing `tasks.md` → run `/aegis tasks`
@@ -36,14 +36,14 @@ Tell the user which Aegis command to run first:
 
 Read and parse every artifact in order. Extract the following:
 
-### From `aegis.config.yaml`
+### From `.aegis/config.yaml`
 
 - `project.name` — used in the tests.md header
 - `project.language` — select the i18n label set from `aegis/framework/i18n/`
 - `formalism` — controls test depth (light / standard / formal); never affects security
 - `stack.test_framework` — the testing tool to use for RED test files (e.g., `vitest`, `pytest`, `jest`, `go test`, `rspec`)
 - `stack.property_testing` — the property-based testing library (e.g., `fast-check`, `hypothesis`, `gopter`, `rantly`)
-- `output.dir` — directory where tests.md and test files are written (default: `aegis/`)
+- `output.dir` — directory where tests.md and test files are written (default: `.aegis/`)
 
 ### From `requirements.md`
 
@@ -399,7 +399,7 @@ Run `/aegis validate` at any time for a full cross-artifact coverage report.
 
 | Condition | Action |
 |-----------|--------|
-| `aegis.config.yaml` is missing | Stop. Tell user to run `/aegis init` first. |
+| `.aegis/config.yaml` is missing | Stop. Tell user to run `/aegis init` first. |
 | `requirements.md` is missing | Stop. Tell user to run `/aegis requirements` first. |
 | `design.md` is missing | Stop. Tell user to run `/aegis design` first. |
 | `tasks.md` is missing | Stop. Tell user to run `/aegis tasks` first. |

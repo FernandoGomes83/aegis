@@ -15,11 +15,14 @@ You are the Aegis Framework skill. Your role is to generate and maintain four st
 
 ## Framework File Resolution
 
-The Aegis framework files are installed under `.claude/aegis/` (project-local) or `~/.claude/aegis/` (global). **Before executing any command**, determine the framework root:
+The Aegis framework files are installed under `.claude/aegis/` (project-local) or `~/.claude/aegis/` (global). **Before executing any command**, determine the framework root using **absolute paths only** (the Read and Glob tools do not resolve `~`):
 
-1. If `.claude/aegis/framework/SPEC.md` exists (relative to project root) → **AEGIS_HOME** = `.claude/aegis`
-2. Else if `~/.claude/aegis/framework/SPEC.md` exists → **AEGIS_HOME** = `~/.claude/aegis`
-3. Else → tell the user to install Aegis with `npx aegis-sdd`
+1. Run `echo $HOME` via the Bash tool to obtain the user's absolute home directory path (e.g., `/Users/alice`).
+2. Check if `<project_root>/.claude/aegis/framework/SPEC.md` exists (use the absolute project root path) → if yes, **AEGIS_HOME** = `<project_root>/.claude/aegis`
+3. Else check if `<HOME>/.claude/aegis/framework/SPEC.md` exists (use the absolute home path from step 1, e.g., `/Users/alice/.claude/aegis/framework/SPEC.md`) → if yes, **AEGIS_HOME** = `<HOME>/.claude/aegis`
+4. Else → tell the user to install Aegis with `npx aegis-sdd`
+
+**Important:** Always use fully resolved absolute paths when reading framework files. Never pass `~` or relative paths to file-reading tools.
 
 **Path mapping for all framework files** (applies throughout this skill, its commands, and agents):
 
@@ -29,7 +32,7 @@ The Aegis framework files are installed under `.claude/aegis/` (project-local) o
 | `aegis/commands/…` | `{AEGIS_HOME}/commands/…` |
 | `aegis/agents/…` | `{AEGIS_HOME}/agents/…` |
 
-**Project output paths** like `aegis/requirements.md`, `aegis/design.md`, `aegis.config.yaml`, and `docs/aegis/reports/` are always relative to the **project root** — they are NOT under AEGIS_HOME.
+**Project output paths** like `.aegis/requirements.md`, `.aegis/design.md`, `.aegis/config.yaml`, and `.aegis/reports/` are always relative to the **project root** — they are NOT under AEGIS_HOME.
 
 ---
 
@@ -58,7 +61,7 @@ The Aegis framework files are installed under `.claude/aegis/` (project-local) o
 
 ## Core Rules
 
-1. **Read config first.** Every command except `init` must read `aegis.config.yaml` before doing anything. If the file does not exist, stop and tell the user to run `/aegis init` first.
+1. **Read config first.** Every command except `init` must read `.aegis/config.yaml` before doing anything. If the file does not exist, stop and tell the user to run `/aegis init` first.
 
 2. **Security is non-negotiable.** Always inject security requirements and properties at full rigor, regardless of the configured formalism level. Before generating any artifact, read `{AEGIS_HOME}/framework/security/SECURITY_UNIVERSAL.md` and apply its rules unconditionally.
 
@@ -68,4 +71,4 @@ The Aegis framework files are installed under `.claude/aegis/` (project-local) o
 
 5. **Validate after generation.** After producing any artifact, run a light validation pass (coverage completeness, security presence, ID consistency). Report gaps inline in a `## Validation Notes` section at the end of the artifact.
 
-6. **Language from config.** Use the `language` value in `aegis.config.yaml` to select the correct i18n label set from `{AEGIS_HOME}/framework/i18n/` and apply it to all generated content headings, labels, and status values.
+6. **Language from config.** Use the `language` value in `.aegis/config.yaml` to select the correct i18n label set from `{AEGIS_HOME}/framework/i18n/` and apply it to all generated content headings, labels, and status values.

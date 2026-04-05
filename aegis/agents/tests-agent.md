@@ -33,7 +33,7 @@ config:
   formalism: "light" | "standard" | "formal"
   test_framework: string        # e.g., "vitest", "pytest", "jest", "go test", "rspec"
   property_testing: string      # e.g., "fast-check", "hypothesis", "gopter", "rantly"
-  output_dir: string            # default: "aegis/"
+  output_dir: string            # default: ".aegis/"
 
 parsed_ids:
   req_ids: [{ id, acceptance_criteria, branches }]
@@ -176,7 +176,7 @@ After all TEST-SEC-* blocks, include the §14 checklist reference block:
 At Formal level, also include a Compliance Mapping table after the security
 tests section, mapping each TEST-SEC-* to the relevant compliance control
 (OWASP Top 10, SOC 2, LGPD, HIPAA, PCI-DSS, or project-specific controls
-declared in `aegis.config.yaml`).
+declared in `.aegis/config.yaml`).
 
 ### Section: Per-Task Tests
 
@@ -255,7 +255,7 @@ shared file if the test framework supports describe/context grouping):
 ### Language detection
 
 Determine the project language from the file extension of files in `src/` or
-equivalent, or from `aegis.config.yaml` if a `stack.language` field is present.
+equivalent, or from `.aegis/config.yaml` if a `stack.language` field is present.
 Use this to select:
 
 - File extension for test files

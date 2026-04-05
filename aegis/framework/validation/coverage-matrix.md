@@ -139,9 +139,9 @@ The security audit is a table with one row per checklist item. Columns:
 
 **PASS**: The checklist item has a SEC-REQ-*, a corresponding SEC-PROP-*, and a TEST-SEC-* that validates it. All three columns are non-empty.
 
-**FAIL**: The checklist item is applicable to this project (based on features declared in aegis.config.yaml) but at least one of SEC-REQ, SEC-PROP, or TEST-SEC is missing. Any FAIL in a mandatory category (Input e dados, Autorização, Proteção, Dados, Infraestrutura) is a blocking error.
+**FAIL**: The checklist item is applicable to this project (based on features declared in .aegis/config.yaml) but at least one of SEC-REQ, SEC-PROP, or TEST-SEC is missing. Any FAIL in a mandatory category (Input e dados, Autorização, Proteção, Dados, Infraestrutura) is a blocking error.
 
-**N/A**: The checklist item is not applicable to this project. For example, the Upload category is N/A for projects with no file upload feature; the URLs e recursos externos category is N/A for projects that make no external HTTP calls. N/A status requires an explicit declaration in aegis.config.yaml (under `security.not_applicable`) and cannot be auto-assigned.
+**N/A**: The checklist item is not applicable to this project. For example, the Upload category is N/A for projects with no file upload feature; the URLs e recursos externos category is N/A for projects that make no external HTTP calls. N/A status requires an explicit declaration in .aegis/config.yaml (under `security.not_applicable`) and cannot be auto-assigned.
 
 ### Example Security Audit Table
 
@@ -201,7 +201,7 @@ GAP-003 [warning] design.md > PROP-017
 The full validation report is written to:
 
 ```
-docs/aegis/reports/validation-YYYY-MM-DD.md
+.aegis/reports/validation-YYYY-MM-DD.md
 ```
 
 Where `YYYY-MM-DD` is the date the `/aegis validate` command was run.
@@ -209,8 +209,8 @@ Where `YYYY-MM-DD` is the date the `/aegis validate` command was run.
 If a report for the same date already exists, the new report appends a counter suffix:
 
 ```
-docs/aegis/reports/validation-2026-04-04.md      ← first run of the day
-docs/aegis/reports/validation-2026-04-04-2.md    ← second run of the same day
+.aegis/reports/validation-2026-04-04.md      ← first run of the day
+.aegis/reports/validation-2026-04-04-2.md    ← second run of the same day
 ```
 
 The `/aegis validate` command also prints a brief summary to stdout (counts of COVERED/PARTIAL/UNCOVERED, total gaps, PASS/FAIL/N/A for security) and writes the full report to the path above. The summary in stdout includes the path to the report file for easy access.
