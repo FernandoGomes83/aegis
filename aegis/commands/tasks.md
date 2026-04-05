@@ -16,10 +16,10 @@ SEC-PROP-*, REQ-NNN, and SEC-REQ-* IDs.
 Before executing any step, verify the following. If any condition is not met,
 stop and report the issue to the user with a clear message.
 
-- `aegis.config.yaml` must exist at the project root. If missing, tell the user
+- `.aegis/config.yaml` must exist at the project root. If missing, tell the user
   to run `/aegis init` first.
 - `requirements.md` must exist in the configured output directory
-  (`output.dir` from config, default: `aegis/`).
+  (`output.dir` from config, default: `.aegis/`).
 - `design.md` must exist in the configured output directory.
 
 If either artifact is marked with a `> NEEDS REVIEW` notice at the top, warn
@@ -32,7 +32,7 @@ content or re-run the upstream command first.
 
 ### Step 1: Load configuration and artifacts
 
-Read `aegis.config.yaml`. Extract:
+Read `.aegis/config.yaml`. Extract:
 - `formalism` → determines task format (light / standard / formal)
 - `language` → load i18n labels from `aegis/framework/i18n/<language>.yaml`
 - `project.name` and `project.stack` → used in artifact header

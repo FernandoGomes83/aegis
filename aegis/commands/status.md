@@ -13,7 +13,7 @@ Follow every step in order. Complete all steps before printing output. Do not as
 
 ## Step 1: Check Initialization
 
-Look for `aegis.config.yaml` at the project root.
+Look for `.aegis/config.yaml` at the project root.
 
 - If the file does **not** exist, print exactly the following and stop:
 
@@ -25,7 +25,7 @@ Look for `aegis.config.yaml` at the project root.
   - `project.name`
   - `project.language` (default: `en` if not set)
   - `formalism` (default: `standard` if not set)
-  - `output.dir` (default: `aegis/` if not set)
+  - `output.dir` (default: `.aegis/` if not set)
 
 ---
 

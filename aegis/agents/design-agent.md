@@ -22,7 +22,7 @@ You receive the following context from `/aegis design`:
 
 ```
 requirements_content: string   # full text of requirements.md
-stack_config:                  # stack section from aegis.config.yaml + user decisions
+stack_config:                  # stack section from .aegis/config.yaml + user decisions
   language: string             # e.g., "TypeScript", "Python", "Go"
   runtime: string              # e.g., "Node.js 20", "Python 3.12", "Go 1.22"
   libraries: string            # e.g., "Next.js 14, Prisma, Zod"
@@ -418,7 +418,7 @@ Items that remain unresolved after generation must be listed in a dedicated
 
 ## Output Contract
 
-Write the complete design.md to `<output_dir>/design.md` (default: `aegis/design.md`).
+Write the complete design.md to `<output_dir>/design.md` (default: `.aegis/design.md`).
 
 Return the following structured summary to the `/aegis design` command:
 

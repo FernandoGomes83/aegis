@@ -5,13 +5,13 @@ description: Full validation — coverage matrix, security audit, gaps
 
 # /aegis validate
 
-Full cross-artifact validation. Produces a coverage matrix, security audit, gaps report, and stats. Writes the complete report to `docs/aegis/reports/validation-YYYY-MM-DD.md` and prints a summary to the terminal.
+Full cross-artifact validation. Produces a coverage matrix, security audit, gaps report, and stats. Writes the complete report to `.aegis/reports/validation-YYYY-MM-DD.md` and prints a summary to the terminal.
 
 ---
 
 ## Prerequisites
 
-1. Read `aegis.config.yaml`. If it does not exist, stop and tell the user to run `/aegis init` first.
+1. Read `.aegis/config.yaml`. If it does not exist, stop and tell the user to run `/aegis init` first.
 2. Note `project.name`, `formalism`, `language`, and any `security.not_applicable` declarations.
 
 ---
@@ -22,10 +22,10 @@ Read whichever of the following files exist. Do not fail if a file is missing �
 
 | File | Artifact |
 |------|----------|
-| `aegis/requirements.md` (or the path from `output.dir` in config) | Requirements |
-| `aegis/design.md` | Design |
-| `aegis/tasks.md` | Tasks |
-| `aegis/tests.md` | Tests |
+| `.aegis/requirements.md` (or the path from `output.dir` in config) | Requirements |
+| `.aegis/design.md` | Design |
+| `.aegis/tasks.md` | Tasks |
+| `.aegis/tests.md` | Tests |
 
 Also read:
 - `aegis/framework/security/security-requirements.yaml` — canonical SEC-REQ-* catalog
@@ -84,8 +84,8 @@ For each checklist item:
 3. Find the matching TEST-SEC-* in tests.md that tests that SEC-PROP-* or SEC-REQ-* (if present).
 4. Assign status:
    - **PASS**: All three — SEC-REQ, SEC-PROP, TEST-SEC — are present.
-   - **FAIL**: The item is applicable to this project (based on `aegis.config.yaml` features and `security.not_applicable` declarations) and at least one of SEC-REQ, SEC-PROP, or TEST-SEC is missing. A FAIL in a mandatory category (Input e dados, Autorização, Proteção, Dados, Infraestrutura) is a **blocking error**.
-   - **N/A**: The item's category is listed under `security.not_applicable` in `aegis.config.yaml`. N/A cannot be auto-assigned without an explicit config declaration.
+   - **FAIL**: The item is applicable to this project (based on `.aegis/config.yaml` features and `security.not_applicable` declarations) and at least one of SEC-REQ, SEC-PROP, or TEST-SEC is missing. A FAIL in a mandatory category (Input e dados, Autorização, Proteção, Dados, Infraestrutura) is a **blocking error**.
+   - **N/A**: The item's category is listed under `security.not_applicable` in `.aegis/config.yaml`. N/A cannot be auto-assigned without an explicit config declaration.
 
 Output: a Markdown table with columns `Category | Item | SEC-REQ | SEC-PROP | TEST-SEC | Status`.
 
@@ -193,18 +193,18 @@ Dispatch to `aegis/agents/validation-agent.md` with all data collected in Steps 
 **Report file path:**
 
 ```
-docs/aegis/reports/validation-YYYY-MM-DD.md
+.aegis/reports/validation-YYYY-MM-DD.md
 ```
 
 Where `YYYY-MM-DD` is today's date. If the file already exists, append a counter suffix:
 
 ```
-docs/aegis/reports/validation-2026-04-04.md       ← first run of the day
-docs/aegis/reports/validation-2026-04-04-2.md     ← second run of the same day
-docs/aegis/reports/validation-2026-04-04-3.md     ← third run, etc.
+.aegis/reports/validation-2026-04-04.md       ← first run of the day
+.aegis/reports/validation-2026-04-04-2.md     ← second run of the same day
+.aegis/reports/validation-2026-04-04-3.md     ← third run, etc.
 ```
 
-Create the `docs/aegis/reports/` directory if it does not exist.
+Create the `.aegis/reports/` directory if it does not exist.
 
 **Report structure** (sections in this order):
 
@@ -254,7 +254,7 @@ Gaps               : N errors, N warnings
 Light Validation   : N passed, N failed
 
 Overall coverage % : N%
-Report written to  : docs/aegis/reports/validation-YYYY-MM-DD.md
+Report written to  : .aegis/reports/validation-YYYY-MM-DD.md
 ```
 
 **If any security FAIL items exist**, display them prominently before the summary block:

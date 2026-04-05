@@ -28,8 +28,8 @@ light_validation:
     - id: VAL-REQ-01
       check: every_input_doc_has_derived_req
       description: >
-        Every input document listed in aegis.config.yaml (or auto-detected in
-        aegis/inputs/) must have at least one REQ-NNN or SEC-REQ-* entry whose
+        Every input document listed in .aegis/config.yaml (or auto-detected in
+        .aegis/inputs/) must have at least one REQ-NNN or SEC-REQ-* entry whose
         text includes a "Derives from: <input-doc-name>" citation. This ensures
         that no input document was silently ignored during requirements
         generation and that the agent has traceable coverage of all provided
@@ -280,7 +280,7 @@ light_validation:
 # FULL VALIDATION
 # Triggered on demand via `/aegis validate`.
 # Runs all light checks plus cross-artifact analysis.
-# Output is written to docs/aegis/reports/validation-YYYY-MM-DD.md
+# Output is written to .aegis/reports/validation-YYYY-MM-DD.md
 # ---------------------------------------------------------------------------
 
 full_validation:
@@ -325,7 +325,7 @@ full_validation:
         whether a TEST-SEC-* validates it. Each item is assigned a status of
         PASS (covered end-to-end), FAIL (missing requirement, property, or
         test), or N/A (not applicable to this project type based on features
-        declared in aegis.config.yaml). The audit result is written as a
+        declared in .aegis/config.yaml). The audit result is written as a
         structured table in the validation report. Any FAIL status in a
         mandatory category is a blocking error.
       severity: error

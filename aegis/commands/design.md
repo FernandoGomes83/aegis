@@ -13,8 +13,8 @@ Generate `design.md` from `requirements.md` and the project's stack configuratio
 
 Before doing anything else, verify both prerequisites are present:
 
-1. Read `aegis.config.yaml` from the project root. If it does not exist, stop and tell the user to run `/aegis init` first.
-2. Read `aegis/requirements.md` (or the path under `output.dir` in config). If it does not exist, stop and tell the user to run `/aegis requirements` first.
+1. Read `.aegis/config.yaml` from the project root. If it does not exist, stop and tell the user to run `/aegis init` first.
+2. Read `.aegis/requirements.md` (or the path under `output.dir` in config). If it does not exist, stop and tell the user to run `/aegis requirements` first.
 
 If either file is missing, do not proceed.
 
@@ -22,7 +22,7 @@ If either file is missing, do not proceed.
 
 ## Step 1 — Load Config
 
-Read `aegis.config.yaml` and extract:
+Read `.aegis/config.yaml` and extract:
 
 - `project.name` — used in the artifact header
 - `project.language` — select i18n label set from `aegis/framework/i18n/`
@@ -71,7 +71,7 @@ This analysis drives which components and properties are needed.
 
 Before generating, identify open architectural decisions **not already answered by the stack config**.
 
-For each open decision below, if the answer is not determinable from `aegis.config.yaml` and is relevant to the project's requirements, ask ONE question and wait for the answer before asking the next.
+For each open decision below, if the answer is not determinable from `.aegis/config.yaml` and is relevant to the project's requirements, ask ONE question and wait for the answer before asking the next.
 
 **Decision checklist** (skip any that the stack config already answers):
 
@@ -97,7 +97,7 @@ Only ask about decisions that are both unanswered and relevant. If all decisions
 Dispatch to `aegis/agents/design-agent.md` with the following inputs:
 
 - **requirements_content**: full text of `requirements.md`
-- **stack_config**: the stack section from `aegis.config.yaml` plus any answers from Step 4
+- **stack_config**: the stack section from `.aegis/config.yaml` plus any answers from Step 4
 - **user_decisions**: key/value map of answers collected in Step 4
 - **template**: content of `aegis/framework/templates/design/<formalism>.template.md`
 - **i18n**: loaded label set from Step 1
@@ -119,7 +119,7 @@ The agent must write a complete `design.md` that:
 7. **Includes Correctness Properties** (PROP-NNN) — grouped by functional area, derived from requirements and user flows.
 8. **Includes Security Properties** (SEC-PROP-*) — the filtered set from Step 2, placed in the auto-generated section at the end.
 
-The output file path is `<output.dir>/design.md` (default: `aegis/design.md`).
+The output file path is `<output.dir>/design.md` (default: `.aegis/design.md`).
 
 ---
 
