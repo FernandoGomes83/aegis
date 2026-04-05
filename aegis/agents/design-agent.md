@@ -51,6 +51,12 @@ security_properties:           # filtered SEC-PROP entries from security-propert
 level_rules: string            # content of aegis/framework/levels/<level>.md
 req_ids: [string]              # all REQ-NNN IDs extracted from requirements.md
 sec_req_ids: [string]          # all SEC-REQ-* IDs extracted from requirements.md
+documentation_context: string  # Up-to-date documentation snippets for stack
+                               # libraries, fetched from Context7 or WebSearch.
+                               # May be empty if lookup was unavailable.
+                               # Contains: API patterns, project structure
+                               # conventions, and integration patterns for each
+                               # library in the stack.
 ```
 
 ---
@@ -68,6 +74,26 @@ choice must be reflected in:
 
 Never invent stack choices. If a field is `TBD` in the config, mark it as
 `TBD — confirm with /aegis:update` in the design rather than substituting a guess.
+
+---
+
+## Rule 1a — Prefer Documentation Over Training Knowledge
+
+When `documentation_context` is non-empty, use the provided documentation
+snippets as the **primary source of truth** for:
+
+- Directory structure conventions (e.g., Next.js App Router `app/` layout)
+- API and routing patterns (e.g., file-based routing, middleware chains)
+- Data model syntax (e.g., Prisma schema v5 syntax if docs show it)
+- Configuration patterns (e.g., how the framework expects env vars, config files)
+- Component naming conventions (e.g., server vs. client components in React Server Components)
+
+When the documentation contradicts your training knowledge, **the documentation
+wins** — it represents the current version of the library. When the documentation
+is silent on a topic, fall back to training knowledge.
+
+When `documentation_context` is empty, proceed with training knowledge only.
+This is not an error state — it simply means the lookup was unavailable.
 
 ---
 
@@ -287,6 +313,13 @@ conventions:
 - Express: `src/`, `src/routes/`, `src/controllers/`, `src/models/`, `src/middleware/`
 - Django: project and app directories per Django's standard layout
 - Other: derive from the stack's documented convention
+
+When generating the directory structure, cross-reference with
+`documentation_context` for the project's framework. Use the directory layout
+documented for the current version of the framework, not a historical
+convention. For example, if the docs show Next.js uses `app/` with co-located
+`loading.tsx` and `error.tsx` files, reflect that — do not use the legacy
+`pages/` convention unless the stack config explicitly states Pages Router.
 
 ### Section: Components (Standard and Formal levels)
 
