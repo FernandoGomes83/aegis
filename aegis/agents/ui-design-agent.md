@@ -89,7 +89,10 @@ one page-level specification and one component specification.
 
 Never use generic fonts. The following are explicitly forbidden as primary
 choices: Inter, Roboto, Arial, Helvetica, system-ui, sans-serif (as sole
-declaration), Open Sans, Lato, Montserrat.
+declaration), Open Sans, Lato, Montserrat. These fonts are forbidden as the
+**primary** (first) entry in a font-family declaration only. They may appear
+as fallbacks in the stack (e.g., `"Instrument Serif", "Georgia", serif` is
+valid because Georgia is a fallback, not the primary).
 
 **Required typography specification:**
 

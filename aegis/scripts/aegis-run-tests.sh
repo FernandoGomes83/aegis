@@ -1,5 +1,5 @@
 #!/bin/bash
-# aegis-sdd v1.3.0 — Run test framework and report structured results
+# aegis-sdd — Run test framework and report structured results
 # Usage: aegis-run-tests.sh <framework> <test_dir>
 
 set -uo pipefail
@@ -34,12 +34,30 @@ fi
 
 # Adjust test dir for Go's module pattern
 if [ "$FRAMEWORK" = "go" ]; then
-  TEST_DIR="./$TEST_DIR..."
+  if [[ "$TEST_DIR" = /* ]]; then
+    TEST_DIR="${TEST_DIR}..."
+  else
+    TEST_DIR="./$TEST_DIR..."
+  fi
 fi
 
-# Run tests
-$CMD "$TEST_DIR" 2>&1
+# Run tests with timeout (default 300s / 5 minutes)
+TIMEOUT_SECS="${AEGIS_TEST_TIMEOUT:-300}"
+
+if command -v timeout &>/dev/null; then
+  timeout "$TIMEOUT_SECS" $CMD "$TEST_DIR" 2>&1
+elif command -v perl &>/dev/null; then
+  perl -e "alarm $TIMEOUT_SECS; exec @ARGV" $CMD "$TEST_DIR" 2>&1
+else
+  $CMD "$TEST_DIR" 2>&1
+fi
 EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 124 ] || [ $EXIT_CODE -eq 142 ]; then
+  echo ""
+  echo "ERROR=timeout"
+  echo "Tests exceeded ${TIMEOUT_SECS}s timeout."
+fi
 
 # Structured summary
 echo ""

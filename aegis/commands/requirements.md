@@ -79,6 +79,76 @@ Also identify which security-relevant project characteristics are present in the
 
 ---
 
+## Step 2.5: Research Unknown Terms
+
+Analyze the extracted content from Step 2 for proper nouns, product names, technology names, and domain-specific terms that may refer to concepts outside the model's training data or knowledge cutoff.
+
+### Identification
+
+Scan all extracted content for:
+
+- Product names (e.g., "Nano Banana 2", "TurboWidget Pro") that are not widely known.
+- Technology or platform names that may have launched after the model's knowledge cutoff.
+- Domain-specific jargon unique to the project's industry without clear definitions in the input docs.
+- Version-specific references to products or frameworks where the version is unknown to the model.
+- Acronyms or abbreviations that cannot be confidently expanded from context alone.
+
+### Self-assessment
+
+For each identified term, assess confidence:
+
+- **Known** — well-understood and in training data. Skip.
+- **Uncertain** — exists in training data but may be outdated, partially known, or ambiguous. Research.
+- **Unknown** — not in training data at all. Research.
+
+Compile a list of terms classified as Uncertain or Unknown.
+
+If the list is empty (all terms are Known), set `research_context` to an empty string and proceed to Step 3.
+
+### Research via WebSearch
+
+For each Uncertain or Unknown term, use the **WebSearch** tool with:
+
+```
+"<term> official site OR documentation OR product page <current year>"
+```
+
+Where `<current year>` is the actual current year (e.g., 2026).
+
+From the search results, extract:
+- What the product/technology is (one-sentence definition).
+- Key capabilities or features relevant to the project.
+- Version or release information if applicable.
+- Any constraints, pricing model, or platform requirements.
+
+Limit to the **top 2** most relevant results per term. Summarize each in **300 tokens maximum**. Prefer official sources over blogs or forums.
+
+**Maximum 5 terms per run.** If more than 5 terms are Uncertain/Unknown, prioritize by:
+
+1. Terms that appear most frequently in the input docs.
+2. Terms that are central to a feature or user flow.
+3. Terms where misunderstanding would produce incorrect requirements.
+
+### Compile research context
+
+Assemble `research_context` from all researched terms:
+
+```markdown
+### <Term> — Research Summary
+
+<summary content>
+
+---
+```
+
+This block is passed to the requirements agent alongside other context in Step 6.
+
+### Non-blocking
+
+This step is **non-blocking**. If WebSearch is unavailable or returns no useful results for a given term, skip that term. If all lookups fail, set `research_context` to an empty string and proceed. The agent falls back to its training knowledge when research is unavailable. Never stop or error on research failure.
+
+---
+
 ## Step 3: Load Security Requirements
 
 Read `aegis/framework/security/security-requirements.yaml`.
@@ -133,6 +203,7 @@ Dispatch to `aegis/agents/requirements-agent.md` with the following context pack
 - **sec_reqs** — the filtered SEC-REQ set from Step 3.
 - **level_rules** — the level rules loaded in Step 1, specifically the requirements format section.
 - **project_name** — from `.aegis/config.yaml`.
+- **research_context** — compiled research summaries for domain terms, products, or technologies that were unknown or uncertain to the model (Step 2.5). May be an empty string if no unknown terms were found or WebSearch was unavailable.
 
 The agent must produce a complete `requirements.md` artifact. Instruct the agent to:
 
@@ -177,6 +248,7 @@ requirements.md generated.
   Functional requirements : <N> (REQ-001 … REQ-NNN)
   Security requirements   : <M> (SEC-REQ-*)
   Input docs processed    : <K>
+  Terms researched        : <R> (or "none needed")
   Formalism level         : <light|standard|formal>
   Language                : <en|pt-BR>
   Validation              : <PASSED | PASSED WITH WARNINGS | FAILED — see Validation Notes>

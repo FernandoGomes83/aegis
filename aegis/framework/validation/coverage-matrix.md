@@ -117,6 +117,8 @@ coverage % = (COVERED rows / total rows) × 100
 
 Rounded to one decimal place. Security rows are counted separately in the summary but included in the total for the overall percentage.
 
+PARTIAL rows do **not** contribute to the coverage percentage. Only fully COVERED rows count toward the numerator. A project with 10 COVERED, 5 PARTIAL, and 5 UNCOVERED has 50% coverage (10/20), not 75% (15/20). This is intentional — partial traceability is better than none but does not constitute verified coverage.
+
 ---
 
 ## 5. Security Audit Section

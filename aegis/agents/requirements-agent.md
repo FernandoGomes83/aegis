@@ -54,6 +54,10 @@ level_rules:
 
 project_name: <string>
 generation_date: <YYYY-MM-DD>
+
+research_context: <string>       # Compiled research summaries for domain terms,
+                                 # products, or technologies that were unknown or
+                                 # uncertain to the model. May be empty.
 ```
 
 ---
@@ -136,6 +140,18 @@ together and follow each other in sequence. Use a level-2 comment heading
 (e.g., `<!-- ### Authentication -->`) before each group to make the grouping
 visible in the source, even if the rendered output does not show it as a
 heading.
+
+**Rule 9 — Use research context for unknown terms.**
+When `research_context` is non-empty, use the researched definitions and
+capabilities as the **source of truth** for any terms covered in the research.
+Do not contradict researched facts with assumptions from training data.
+When writing acceptance criteria for features that involve researched products
+or technologies, ground the criteria in the capabilities and constraints
+discovered during research. If a researched term reveals that a feature
+described in the input docs is technically infeasible or constrained in ways
+not anticipated by the input, add a `<!-- REVIEW: <description> -->` comment
+noting the constraint discovered during research. When `research_context` is
+empty, proceed with training knowledge only — this is not an error state.
 
 ---
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# aegis-sdd v1.3.0 — Get modification timestamps for all Aegis artifact files
+# aegis-sdd — Get modification timestamps for all Aegis artifact files
 # Usage: aegis-timestamps.sh <output_dir>
 
 set -euo pipefail
@@ -10,11 +10,10 @@ ARTIFACTS=("requirements.md" "design.md" "ui-design.md" "tasks.md" "tests.md")
 
 get_date() {
   local file="$1"
-  if [[ "$(uname)" == "Darwin" ]]; then
-    stat -f "%Sm" -t "%Y-%m-%d" "$file"
-  else
-    stat -c "%y" "$file" | cut -d' ' -f1
-  fi
+  case "$OSTYPE" in
+    darwin*) stat -f "%Sm" -t "%Y-%m-%d" "$file" ;;
+    *)       stat -c "%y" "$file" | cut -d' ' -f1 ;;
+  esac
 }
 
 for artifact in "${ARTIFACTS[@]}"; do

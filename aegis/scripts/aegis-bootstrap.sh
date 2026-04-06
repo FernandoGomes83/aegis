@@ -1,5 +1,5 @@
 #!/bin/bash
-# aegis-sdd v1.3.0 — Bootstrap: resolve AEGIS_HOME and optionally create dirs
+# aegis-sdd — Bootstrap: resolve AEGIS_HOME and optionally create dirs
 # Usage: aegis-bootstrap.sh <project_root> [resolve|init]
 
 set -euo pipefail

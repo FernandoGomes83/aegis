@@ -35,24 +35,31 @@ if (args.includes("--global") || args.includes("-g")) {
 
 // Ask if no flag provided
 if (!scope) {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const answer = await new Promise((resolve) => {
-    console.log("  Where do you want to install Aegis?");
+  if (!process.stdin.isTTY) {
+    console.log("  No --global or --local flag provided and stdin is not a TTY.");
+    console.log("  Defaulting to global install. Use --global or --local to specify.");
     console.log("");
-    console.log("    g) Global  — available in all projects (~/.claude/)");
-    console.log("    l) Local   — this project only (.claude/)");
-    console.log("");
-    rl.question("  Choose [g/l]: ", resolve);
-  });
-  rl.close();
-
-  const choice = answer.trim().toLowerCase();
-  if (choice === "l" || choice === "local") {
-    scope = "local";
-  } else {
     scope = "global";
+  } else {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await new Promise((resolve) => {
+      console.log("  Where do you want to install Aegis?");
+      console.log("");
+      console.log("    g) Global  — available in all projects (~/.claude/)");
+      console.log("    l) Local   — this project only (.claude/)");
+      console.log("");
+      rl.question("  Choose [g/l]: ", resolve);
+    });
+    rl.close();
+
+    const choice = answer.trim().toLowerCase();
+    if (choice === "l" || choice === "local") {
+      scope = "local";
+    } else {
+      scope = "global";
+    }
+    console.log("");
   }
-  console.log("");
 }
 
 // Determine base .claude directory
@@ -106,13 +113,20 @@ if (existsSync(oldPluginsDir)) {
 
 // Install command files
 // Index file: /aegis
-cpSync(join(source, "skill.md"), join(commandsDir, "aegis.md"));
+const skillSource = join(source, "skill.md");
+if (!existsSync(skillSource)) {
+  console.error(`  Error: ${skillSource} not found. Package may be corrupted.`);
+  process.exit(1);
+}
+cpSync(skillSource, join(commandsDir, "aegis.md"));
 // Sub-commands: /aegis:<name>
 for (const cmd of subCommands) {
-  cpSync(
-    join(source, "commands", `${cmd}.md`),
-    join(commandsDir, `aegis:${cmd}.md`)
-  );
+  const cmdSource = join(source, "commands", `${cmd}.md`);
+  if (!existsSync(cmdSource)) {
+    console.error(`  Error: ${cmdSource} not found. Package may be corrupted.`);
+    process.exit(1);
+  }
+  cpSync(cmdSource, join(commandsDir, `aegis:${cmd}.md`));
 }
 
 // Install framework + shared + agents (no longer install commands/ to aegis/)

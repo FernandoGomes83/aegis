@@ -25,5 +25,11 @@
     "aegis/**",
     "bin/**"
   ],
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "test": "node --check bin/install.mjs"
+  }
 }

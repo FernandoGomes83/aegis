@@ -1,9 +1,14 @@
 #!/bin/bash
-# aegis-sdd v1.3.0 — Context7 batch lookup: resolve + fetch docs for all libraries
+# aegis-sdd — Context7 batch lookup: resolve + fetch docs for all libraries
 # Usage: aegis-context7.sh <api_key> <query> <lib1> [lib2] ...
 # Output: plain text with === delimiters (no JSON)
 
 set -uo pipefail
+
+if ! command -v curl &>/dev/null; then
+  echo "ERROR: curl is required but not found in PATH."
+  exit 1
+fi
 
 API_KEY="${1:?Usage: aegis-context7.sh <api_key> <query> <lib1> [lib2] ...}"
 QUERY="${2:?Missing query}"
@@ -19,6 +24,20 @@ BASE_URL="https://context7.com/api/v2"
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
+# --- Pre-flight: validate API key before spawning parallel requests ---
+preflight_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
+  -H "Authorization: Bearer $API_KEY" \
+  -G --data-urlencode "query=react" \
+  "$BASE_URL/libs/search" 2>/dev/null || echo "000")
+if [ "$preflight_code" = "401" ] || [ "$preflight_code" = "403" ]; then
+  echo "ERROR: Context7 API key is invalid or expired. Check CONTEXT7_API_KEY in .env."
+  exit 1
+fi
+if [ "$preflight_code" = "000" ]; then
+  echo "ERROR: Context7 API is unreachable. Check network connectivity."
+  exit 1
+fi
+
 TOTAL=${#LIBS[@]}
 RESOLVED=0
 FAILED=0
@@ -28,9 +47,10 @@ FAILED=0
 for i in "${!LIBS[@]}"; do
   lib="${LIBS[$i]}"
   (
-    response=$(curl -s -w "\n%{http_code}" --max-time 10 \
+    response=$(curl -s -w "\n%{http_code}" --max-time 10 -G \
       -H "Authorization: Bearer $API_KEY" \
-      "$BASE_URL/libs/search?query=$lib" 2>/dev/null || echo -e "\n000")
+      --data-urlencode "query=$lib" \
+      "$BASE_URL/libs/search" 2>/dev/null || echo -e "\n000")
 
     http_code=$(echo "$response" | tail -1)
     body=$(echo "$response" | sed '$d')
@@ -58,13 +78,12 @@ for i in "${!LIBS[@]}"; do
   status_file="$TMPDIR/phase1_${i}_status"
   body_file="$TMPDIR/phase1_${i}_body"
 
-  [ -f "$status_file" ] || { FAILED=$((FAILED + 1)); continue; }
+  [ -f "$status_file" ] || continue
 
   code=$(cat "$status_file")
   body=$(cat "$body_file")
 
   if [ "$code" != "200" ]; then
-    FAILED=$((FAILED + 1))
     echo "not_found" > "$TMPDIR/result_${i}"
     continue
   fi
@@ -79,7 +98,6 @@ for i in "${!LIBS[@]}"; do
   fi
 
   if [ -z "$lib_id" ]; then
-    FAILED=$((FAILED + 1))
     echo "not_found" > "$TMPDIR/result_${i}"
   else
     echo "$lib_id" > "$TMPDIR/libid_${i}"
@@ -88,15 +106,16 @@ done
 
 # --- Phase 2: Fetch documentation (parallel) ---
 
-encoded_query=$(printf '%s' "$QUERY" | sed 's/ /%20/g; s/,/%2C/g')
-
 for i in "${!LIBS[@]}"; do
   [ -f "$TMPDIR/libid_${i}" ] || continue
   lib_id=$(cat "$TMPDIR/libid_${i}")
   (
-    response=$(curl -s -w "\n%{http_code}" --max-time 15 \
+    response=$(curl -s -w "\n%{http_code}" --max-time 15 -G \
       -H "Authorization: Bearer $API_KEY" \
-      "$BASE_URL/context?libraryId=$lib_id&query=$encoded_query&type=txt" 2>/dev/null || echo -e "\n000")
+      --data-urlencode "libraryId=$lib_id" \
+      --data-urlencode "query=$QUERY" \
+      --data-urlencode "type=txt" \
+      "$BASE_URL/context" 2>/dev/null || echo -e "\n000")
 
     http_code=$(echo "$response" | tail -1)
     body=$(echo "$response" | sed '$d')

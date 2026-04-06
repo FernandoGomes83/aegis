@@ -209,6 +209,8 @@ Silently preserve these sections by appending them at the bottom of the regenera
 
 **Security.** Always re-inject security content at full rigor, regardless of what was in the previous artifact. Read `aegis/framework/security/SECURITY_UNIVERSAL.md` and the relevant YAML files. Do not preserve old SEC-REQ-* or SEC-PROP-* verbatim — they are replaced with the current output of the security agent.
 
+**Stack documentation refresh.** When regenerating `design.md`, `ui-design.md`, `tasks.md`, or `tests.md`, execute the Context7 documentation lookup step (Step 3.5 / Step 1.5 as defined in the original generation command) to fetch current library documentation. The existing artifact may have been generated with outdated documentation context. Pass the refreshed `documentation_context` to the agent alongside other context. This step is non-blocking — if Context7 and WebSearch are both unavailable, proceed without documentation context.
+
 **Write the updated artifact.** Overwrite the existing file at its current path. Do not print the full artifact content to the user — confirm the write with a single line:
 
 ```

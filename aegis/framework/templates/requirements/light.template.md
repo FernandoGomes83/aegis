@@ -124,6 +124,12 @@
 
      After generation, this block is replaced with the actual injected
      SEC-REQ-* entries. The placeholder below shows the expected structure.
+
+     Note: The validation check VAL-REQ-02 requires at least five SEC-REQ
+     entries. The three baseline entries above plus conditional entries from
+     applies_when filtering typically satisfy this. Projects with two or
+     more detected characteristics (e.g., has_authentication + has_write_operations)
+     will always meet the minimum. The agent must inject ALL filtered entries.
 -->
 
 ### SEC-REQ-INPUT-01: Schema Validation on All Endpoints
