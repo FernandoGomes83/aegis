@@ -42,12 +42,9 @@ If any file is missing, do not proceed.
 Read `.aegis/config.yaml` and extract:
 
 - `project.name` — used in the artifact header
-- `project.language` — select i18n label set from `aegis/framework/i18n/`
 - `formalism` — `light`, `standard`, or `formal` (default: `standard`)
 - `stack` — any stack keys present, especially: `framework` (React, Vue, Svelte, etc.), `language` (TypeScript, etc.), `libraries` (Tailwind, CSS modules, styled-components, etc.)
 - `features` — any feature flags present
-
-Load the i18n label set for the configured language.
 
 ---
 
@@ -133,7 +130,6 @@ Dispatch to `aegis/agents/ui-design-agent.md` with the following inputs:
 - **brand_guide**: content of the brand-guide input doc (if any), else `null`
 - **user_decisions**: key/value map of answers collected in Step 3
 - **template**: content of `aegis/framework/templates/ui-design/<formalism>.template.md`
-- **i18n**: loaded label set from Step 1
 - **level_rules**: content of `aegis/framework/levels/<formalism>.md`
 - **req_ids**: list of all REQ-NNN IDs extracted in Step 2
 - **ui_req_ids**: subset of REQ-NNN IDs that are UI-relevant (from Step 2)
@@ -199,8 +195,6 @@ Warnings (if any):
 
 Next: run /aegis:tasks to generate the implementation plan.
 ```
-
-Use the i18n label set for all section headings in the summary if the project language is not English.
 
 ---
 

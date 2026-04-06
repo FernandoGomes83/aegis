@@ -40,7 +40,7 @@ Existing documentation found:
   2. docs/BRAND.md
   3. ARCHITECTURE.md
 
-These files will be candidates for input documents in Step 5.
+These files will be candidates for input documents in Step 4.
 ```
 
 ---
@@ -116,24 +116,7 @@ Wait for the user's selection.
 
 ---
 
-## Step 4: Select Language
-
-Ask the user to choose the language for all generated artifact content:
-
-```
-Choose the language for generated documents:
-
-  1. English (en)
-  2. Português Brasileiro (pt-BR)
-
-Enter 1 or 2 (default: 1):
-```
-
-Wait for the user's selection.
-
----
-
-## Step 5: Classify Input Documents
+## Step 4: Classify Input Documents
 
 For each document found in Step 1, read its first 200 lines and match its content against the keyword signals defined in `aegis/framework/inputs/recommended-types.md`.
 
@@ -162,9 +145,9 @@ Wait for the user's confirmation. Use their answers to build the final `inputs` 
 
 ---
 
-## Step 6: Detect Security-Relevant Features
+## Step 5: Detect Security-Relevant Features
 
-Based on the input documents read in Step 5 and the stack detected in Step 2, scan for indicators of the following security-relevant features:
+Based on the input documents read in Step 4 and the stack detected in Step 2, scan for indicators of the following security-relevant features:
 
 | Feature Flag | Positive Indicators |
 |---|---|
@@ -198,9 +181,9 @@ Wait for the user's confirmation.
 
 ---
 
-## Step 7: Generate `.aegis/config.yaml`
+## Step 6: Generate `.aegis/config.yaml`
 
-Using all information collected in Steps 1–6, write `.aegis/config.yaml` inside the `.aegis/` directory at the project root.
+Using all information collected in Steps 1–5, write `.aegis/config.yaml` inside the `.aegis/` directory at the project root.
 
 The file must conform exactly to this schema:
 
@@ -210,7 +193,6 @@ version: "1"
 
 project:
   name: "<project name — infer from package.json, pyproject.toml, or ask if not found>"
-  language: "<en | pt-BR>"
 
 formalism: <light | standard | formal>
 
@@ -239,10 +221,17 @@ security_features:
   has_payments: <true | false>
   has_forms: <true | false>
   has_external_urls: <true | false>
+
+build:
+  verifyCommand: "<detected verify command, e.g., 'pnpm build && pnpm test', or null>"
+
+context7:
+  api_key: "YOUR_KEY_HERE"
 ```
 
 Rules:
 - `project.name`: infer from `package.json` (`name` field), `pyproject.toml` (`[project] name`), or `go.mod` (module path). If not found, ask the user.
+- `build.verifyCommand`: infer from the detected stack — look for `scripts.build` and `scripts.test` in `package.json`, `Makefile` targets, `pyproject.toml` scripts, `Cargo.toml`, etc. Combine build and test commands with `&&` (e.g., `"pnpm build && pnpm test"`). If only one exists, use that. If neither can be detected, set to `null`. The build stop hook uses this command to gate task completion — when set, the agent cannot signal TASK_COMPLETE if this command fails.
 - Do not omit any field. Use `null` for optional string fields that were not detected.
 - Use `[]` for empty list fields.
 - Do not add comments beyond the header comment.
@@ -250,7 +239,7 @@ Rules:
 
 ---
 
-## Step 8: Confirm and Next Step
+## Step 7: Confirm and Next Step
 
 > Note: Output directories (`.aegis/`, `.aegis/reports/`, `.aegis/tests/`) were already created by the bootstrap script.
 
@@ -260,7 +249,6 @@ Display a concise summary of everything configured:
 Aegis Framework initialized.
 
   Project:      <name>
-  Language:     <en | Português Brasileiro>
   Formalism:    <light | standard | formal>
   Stack:        <runtime>, <framework>
   Input docs:   <count> file(s) registered
@@ -270,7 +258,27 @@ Files written:
   .aegis/config.yaml
   .aegis/reports/   (created)
   .aegis/tests/          (created)
+```
 
+Then display the Context7 tip:
+
+```
+Tip — Context7 documentation lookup:
+
+  Aegis can fetch up-to-date library documentation via Context7 during the
+  design, ui-design, tasks, and tests phases. To enable it, open
+  .aegis/config.yaml and replace the placeholder:
+
+    context7:
+      api_key: "YOUR_KEY_HERE"   ←  paste your Context7 API key here
+
+  Get a free key at https://context7.com. If you leave the placeholder
+  as-is, Aegis will use WebSearch as fallback — no action required.
+```
+
+Then display the next step:
+
+```
 Next step: run /aegis:requirements to generate requirements.md from your input documents.
 ```
 

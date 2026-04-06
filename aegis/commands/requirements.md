@@ -39,12 +39,9 @@ Before starting, verify:
 Read `.aegis/config.yaml`. Extract and hold in working memory:
 
 - `project.name` — used in the artifact header.
-- `project.language` — determines which i18n file to load (`en` → `aegis/framework/i18n/en.yaml`, `pt-BR` → `aegis/framework/i18n/pt-br.yaml`). Default to `en` if not set.
 - `formalism` — one of `light`, `standard`, `formal`. Default to `standard` if not set. This selects the requirements template and level rules.
 - `inputs` — the list of input document paths and types.
 - `security.extra_requirements` — optional list of project-specific SEC-REQ additions (never used to remove built-ins).
-
-Load the i18n file for the configured language. All headings, labels, and status values in the generated artifact must use the strings from this file.
 
 Load the level rules file for the configured formalism level from `aegis/framework/levels/<level>.md`. Note which structural elements are required vs. optional at this level.
 
@@ -199,7 +196,6 @@ Dispatch to `aegis/agents/requirements-agent.md` with the following context pack
 - **input_doc_contents** — the full extracted content from each input document (Step 2), labeled by source file.
 - **user_answers** — all clarifying answers collected in Step 5.
 - **template** — the requirements template for the configured level from `aegis/framework/templates/requirements/<level>.template.md`.
-- **i18n** — the loaded label set from Step 1.
 - **sec_reqs** — the filtered SEC-REQ set from Step 3.
 - **level_rules** — the level rules loaded in Step 1, specifically the requirements format section.
 - **project_name** — from `.aegis/config.yaml`.
@@ -211,7 +207,6 @@ The agent must produce a complete `requirements.md` artifact. Instruct the agent
 - Include a `Derives from: <input-doc-filename>` citation in every REQ-NNN entry.
 - Append a dedicated **Security Requirements** section containing all SEC-REQ entries from the filtered set, using the `SEC-REQ-<KEY>` IDs as defined in `security-requirements.yaml`.
 - Apply the formalism level rules: use the requirements format (user stories, acceptance criteria depth, glossary) specified in `aegis/framework/levels/<level>.md`.
-- Use i18n strings for all section headings and labels.
 - Include an artifact header with: project name, generation date (2026-04-04), formalism level, and language.
 
 Write the output to `.aegis/requirements.md` (relative to the project root, using the `output.dir` from `.aegis/config.yaml`, defaulting to `.aegis/`).
@@ -250,7 +245,6 @@ requirements.md generated.
   Input docs processed    : <K>
   Terms researched        : <R> (or "none needed")
   Formalism level         : <light|standard|formal>
-  Language                : <en|pt-BR>
   Validation              : <PASSED | PASSED WITH WARNINGS | FAILED — see Validation Notes>
 
 Output written to: .aegis/requirements.md

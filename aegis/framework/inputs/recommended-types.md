@@ -84,4 +84,4 @@ Even with an N/A justification, the generated `requirements.md` will include `SE
 - **Order does not matter**: The skill processes all input docs before generating any artifact. Input docs may be provided in any order.
 - **Multiple docs of the same type**: Allowed. The skill merges them before synthesis (e.g., two product-spec files are treated as one combined specification).
 - **Missing inputs**: The skill will proceed with available inputs but will log which types are absent. A missing `security` input means only `SECURITY_UNIVERSAL.md` is applied — this is valid and expected for most projects.
-- **Language**: Input docs may be written in any language. The generated artifacts will match the language of the input docs, except for IDs and keywords which are always in English.
+- **Language**: Input docs may be written in any language. All generated artifacts are always in English, regardless of input document language.

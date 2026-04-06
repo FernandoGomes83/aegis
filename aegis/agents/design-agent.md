@@ -35,12 +35,6 @@ stack_config:                  # stack section from .aegis/config.yaml + user de
 user_decisions:                # key/value answers from architectural decision prompts
   { key: value, ... }
 template: string               # content of aegis/framework/templates/design/<level>.template.md
-i18n:                          # loaded label set from aegis/framework/i18n/<language>.yaml
-  artifact_titles: { ... }
-  section_titles: { ... }
-  labels: { ... }
-  status: { ... }
-  messages: { ... }
 security_properties:           # filtered SEC-PROP entries from security-properties.yaml
   - id: string                 # e.g., "SEC-PROP-INPUT"
     name: string
@@ -103,7 +97,7 @@ Every component in the Components section must include an `Implements:` field
 listing one or more PROP-NNN or REQ-NNN IDs. A component with no traceability
 link is a design gap.
 
-Use the label from i18n: `{{i18n.labels.implements}}`.
+Use the label `Implements`.
 
 ---
 
@@ -124,7 +118,7 @@ Each PROP-NNN must satisfy all three of the following:
 3. **Validated references** — the `Derives from:` field must contain only IDs that
    appear in `req_ids`. Broken references are a validation error (VAL-DES-02).
 
-Use the label from i18n: `{{i18n.labels.derives_from}}`.
+Use the label `Derives From`.
 
 ---
 
@@ -179,11 +173,10 @@ Use the project's ORM or database syntax:
 
 ---
 
-## Rule 6 — Use i18n Labels for Section Titles
+## Rule 6 — Use English Labels for Section Titles
 
-Use `i18n.section_titles.*` for all section headings in design.md. Do not
-hard-code English titles when the project language is not English. Apply the
-full i18n label set consistently throughout the file.
+Use English labels for all section headings in design.md. Apply consistent
+labels throughout the file.
 
 ---
 

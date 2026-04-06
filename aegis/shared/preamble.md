@@ -27,6 +27,7 @@ All framework file references in commands and agents use shorthand prefixes. Res
 | `/aegis:ui-design` | Generate ui-design.md — frontend/UI design specification |
 | `/aegis:tasks` | Generate tasks.md from design + requirements |
 | `/aegis:tests` | Generate tests.md + RED test files |
+| `/aegis:build` | Implement tasks from tasks.md — autonomous build loop |
 | `/aegis:validate` | Full validation — coverage matrix, security audit, gaps |
 | `/aegis:update [artifact]` | Update an artifact and check downstream impact |
 | `/aegis:status` | Show current Aegis state, coverage, next steps |
@@ -45,4 +46,4 @@ All framework file references in commands and agents use shorthand prefixes. Res
 
 5. **Validate after generation.** After producing any artifact, run a light validation pass (coverage completeness, security presence, ID consistency). Report gaps inline in a `## Validation Notes` section at the end of the artifact.
 
-6. **Language from config.** Use the `language` value in `.aegis/config.yaml` to select the correct i18n label set from `{AEGIS_HOME}/framework/i18n/` and apply it to all generated content headings, labels, and status values.
+6. **All documentation in English.** All Aegis artifacts (requirements.md, design.md, tasks.md, tests.md, ui-design.md) are always generated in English.

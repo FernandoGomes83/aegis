@@ -29,7 +29,6 @@ You receive the following context from `/aegis:tests`:
 ```
 config:
   project_name: string
-  language: "en" | "pt-BR"
   formalism: "light" | "standard" | "formal"
   test_framework: string        # e.g., "vitest", "pytest", "jest", "go test", "rspec"
   property_testing: string      # e.g., "fast-check", "hypothesis", "gopter", "rantly"
@@ -60,8 +59,8 @@ Select the template for the configured formalism level:
 - `aegis/framework/templates/tests/standard.template.md`
 - `aegis/framework/templates/tests/formal.template.md`
 
-Load the i18n label set from `aegis/framework/i18n/{language}.yaml` and apply
-the correct section headings, labels, and status values throughout the file.
+Use English labels for all section headings, labels, and status values
+throughout the file.
 
 Replace every `{{placeholder}}` in the template with real content derived
 from the parsed context. Never leave unfilled placeholders in the output.
@@ -228,10 +227,31 @@ be prefixed with `CRITICAL:` and include the exact ID and suggested resolution.
 After writing tests.md, generate the actual test files. These are the files
 that developers will run during TDD to confirm their implementation is correct.
 
+### Execution rules — CRITICAL
+
+**Do NOT spawn subagents.** Write all test files yourself, sequentially, using
+the Write tool. Spawning parallel agents for file generation causes permission
+conflicts, OOM kills, and incomplete output. You are a single agent — write
+each file one at a time.
+
+**Group tests into shared files when possible.** If the test framework supports
+`describe`/`context` grouping (Vitest, Jest, Pytest, RSpec), group related
+tests into fewer files to reduce the total number of file writes:
+
+- All property tests for PROP-001 through PROP-NNN → one file per logical
+  module or domain area (e.g., `tests/properties/validation.test.ts` for all
+  input-related properties)
+- All E2E tests for a single REQ-NNN → one file (happy + fail + branches)
+- All TEST-SEC-* → one file `tests/properties/security.test.{ext}`
+- All TEST-INT-* → one file per service boundary
+
+This reduces the total file count from potentially 50–100+ files to roughly
+10–20 files.
+
 ### File generation rules
 
 For each test in the test map, write one file (or one test block within a
-shared file if the test framework supports describe/context grouping):
+shared file per the grouping rules above):
 
 1. **Determine the correct imports.** Read design.md to identify the module
    paths and function names the implementation will expose. Write imports to

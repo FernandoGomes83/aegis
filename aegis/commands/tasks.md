@@ -50,7 +50,7 @@ content or re-run the upstream command first.
 
 Read `.aegis/config.yaml`. Extract:
 - `formalism` → determines task format (light / standard / formal)
-- `language` → load i18n labels from `aegis/framework/i18n/<language>.yaml`
+- `language` → target language for the product being built (UI text, user-facing content)
 - `project.name` and `project.stack` → used in artifact header
 - `output.dir` → path to read requirements.md and design.md
 
@@ -136,6 +136,10 @@ Produce a block-by-block ordering plan (internal, not shown to the user) that
 maps each PROP-NNN and SEC-PROP-* to a named block and a position within that
 block. This ordering plan is passed to the agent in Step 3.
 
+Additionally, compute execution phases by grouping tasks whose dependencies are
+all in earlier phases. Tasks in the same phase can run in parallel. Pass this
+analysis as `execution_phases` in the context package.
+
 ---
 
 ### Step 3: Generate tasks.md
@@ -146,7 +150,6 @@ Dispatch to `aegis/agents/tasks-agent.md` with the following context package:
 requirements_content:    <full text of requirements.md>
 design_content:          <full text of design.md>
 template_path:           aegis/framework/templates/tasks/<level>.template.md
-i18n_labels:             <labels object loaded from i18n/<language>.yaml>
 level_rules_path:        aegis/framework/levels/<level>.md
 stack:                   <project.stack from config>
 project_name:            <project.name from config>
@@ -155,6 +158,7 @@ req_ids:                 <indexed list of all REQ-NNN and SEC-REQ-* IDs>
 prop_ids:                <indexed list of all PROP-NNN and SEC-PROP-* IDs>
 components:              <indexed list of component names from design.md>
 documentation_context:   <compiled documentation snippets from Step 1.5, may be empty>
+execution_phases:        <phase groupings computed from dependency analysis in Step 2>
 ```
 
 The agent is responsible for:
@@ -216,6 +220,13 @@ dependency graph. Report any detected cycles with the full cycle path.
 At Standard and Formal levels, every TASK-NNN must include an `Estimate:`
 field. Flag tasks without estimates at these levels.
 
+**VAL-TASK-06 — Execution graph consistent** (error)
+The Execution Graph section at the bottom of tasks.md must accurately reflect
+the dependency declarations in each task entry. Every task assigned to a given
+phase must have all its dependencies in earlier phases. No two tasks in the
+same phase may depend on each other. A task listed as "parallel with" another
+task must share the same phase and must not have a dependency path to that task.
+
 **Additional check — Every PROP referenced by at least one TASK's Tests field**
 For each PROP-NNN and SEC-PROP-* in design.md, verify that at least one TASK
 subtask (or the task itself at Light level) includes a `Tests:` reference
@@ -258,12 +269,17 @@ Coverage
   [R]% of SEC-PROP-* entries have at least one security task
   Estimated total effort: [X]h (if estimates are present)
 
+Execution
+  [E] execution phases
+  Critical path: [C]h (Formal level only, N/A otherwise)
+
 Validation
   VAL-TASK-01: [PASS / N gaps]
   VAL-TASK-02: [PASS / N gaps]
   VAL-TASK-03: [PASS / N gaps]
   VAL-TASK-04: [PASS / N gaps]
   VAL-TASK-05: [PASS / N gaps / N/A for Light]
+  VAL-TASK-06: [PASS / N gaps]
   Tests field coverage: [PASS / N props not yet linked]
 
 Next step: /aegis:tests

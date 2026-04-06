@@ -39,7 +39,6 @@ Look for `.aegis/config.yaml` at the project root.
 
 - If the file exists, read it fully and extract:
   - `project.name`
-  - `project.language` (default: `en` if not set)
   - `formalism` (default: `standard` if not set)
   - `output.dir` (default: `.aegis/` if not set)
 

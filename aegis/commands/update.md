@@ -45,7 +45,7 @@ Before anything else, read `.aegis/config.yaml` at the project root. If it does 
 .aegis/config.yaml not found. Run /aegis:init first.
 ```
 
-If the file exists, load and store all values (project name, language, formalism, inputs, output dir, security_features). All later steps use this configuration.
+If the file exists, load and store all values (project name, formalism, inputs, output dir, security_features). All later steps use this configuration.
 
 ---
 

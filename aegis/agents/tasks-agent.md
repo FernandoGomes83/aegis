@@ -26,7 +26,6 @@ You receive the following context from `/aegis:tasks`:
 requirements_content:    <full text of requirements.md>
 design_content:          <full text of design.md>
 template_path:           aegis/framework/templates/tasks/<level>.template.md
-i18n_labels:             <labels object loaded from i18n/<language>.yaml>
 level_rules_path:        aegis/framework/levels/<level>.md
 stack:                   <project.stack from config>
 project_name:            <project.name from config>
@@ -49,7 +48,7 @@ populate. Select based on the project's formalism level:
 - `aegis/framework/templates/tasks/standard.template.md`
 - `aegis/framework/templates/tasks/formal.template.md`
 
-Apply the correct section headings and labels from `i18n_labels` throughout.
+Use English labels for all section headings throughout.
 Replace every `{{placeholder}}` with real project content. Never leave unfilled
 placeholders in the output.
 
@@ -99,11 +98,18 @@ At Formal level, a CHECKPOINT task is required after each group of 3–7 related
 tasks. At Standard and Light levels, checkpoints are optional but recommended
 when the total task count exceeds 10.
 
+**[P] parallel markers.**
+Tasks that can execute concurrently with other tasks in the same block
+receive a `[P]` marker in their title. A task is parallel-eligible when
+it shares no dependency relationship with other tasks in the same block
+(neither depends on them nor is depended on by them). Consecutive `[P]`
+tasks form a parallel group. Tasks without `[P]` are sequential.
+
 ---
 
 ### Step 3: Write the Overview section
 
-Use the i18n label `i18n_labels.section_titles.overview` as the section heading.
+Use `## Overview` as the section heading.
 
 Include:
 - `**Stack**:` — value from `stack`
@@ -167,14 +173,21 @@ TASK-001, TASK-002, …, TASK-010, TASK-011, …. Never skip numbers.
 
 #### Light level
 
-Format: flat checklist. One entry per task. No subtasks. No dependency
-declarations. No hour estimates.
+Format: flat checklist. One entry per task. No subtasks. No hour estimates.
+Dependency declarations are optional. Include `Depends on: TASK-NNN` when a
+task cannot begin until another task is complete. Omit when no dependencies
+exist.
 
 ```
 - [ ] TASK-NNN: <title>
   <one-sentence description of what the task implements>
   Implements: <PROP-NNN or REQ-NNN>
   Tests: <TEST-* ID>    ← include only when the task adds test coverage
+  Depends on: TASK-NNN  ← include only when the task has dependencies
+
+- [ ] TASK-NNN: [P] <title>
+  <one-sentence description — parallel-eligible task>
+  Implements: <PROP-NNN or REQ-NNN>
 ```
 
 T-shirt size effort is optional: append `(S)`, `(M)`, `(L)`, or `(XL)` to the
@@ -267,6 +280,26 @@ Checkpoints may not be skipped and are treated as formal gates in the plan.
 
 ---
 
+### Step 4.5: Generate Execution Graph
+
+After generating all task entries, compute the execution graph:
+
+1. Build an adjacency list from all `Depends on:` fields.
+2. Perform a topological sort to group tasks into execution phases:
+   - Phase 1: all tasks with no dependencies
+   - Phase N: all tasks whose dependencies are all in phases 1 through N-1
+3. Within each phase, tasks are parallel-eligible (they share the phase
+   because they have no mutual dependencies).
+4. At Formal level, compute the critical path:
+   - For each task, compute earliest start time = max(end times of all deps)
+   - Critical path = the dependency chain with the longest total duration
+5. Render the Execution Graph section in the format defined by the template.
+
+The Execution Graph section is placed after all task entries and before
+the `## Validation Notes` section.
+
+---
+
 ### Step 5: Validate the output before writing
 
 Before writing the file, internally run the following checks. If any check
@@ -287,6 +320,13 @@ The `Depends on:` chains must not contain circular dependencies.
 
 **VAL-TASK-05 — Estimates present (Standard and Formal only).**
 Every TASK-NNN must include an `Estimate:` field at Standard and Formal levels.
+
+**VAL-TASK-06 — Execution graph consistent.**
+The Execution Graph section must accurately reflect the dependency declarations
+in each task entry. Every task assigned to a given phase must have all its
+dependencies in earlier phases. No two tasks in the same phase may depend on
+each other. A task listed as "parallel with" another task must share the same
+phase and must not have a dependency path to that task.
 
 **SEC coverage check — Every SEC-PROP appears in at least one Tests/Validates field.**
 Every SEC-PROP-* in `prop_ids` must be referenced in a `Tests:` or `Validates:`
@@ -311,6 +351,7 @@ the end of the file reporting the result of each check:
 | VAL-TASK-03: No duplicate TASK IDs | PASS | N unique task IDs |
 | VAL-TASK-04: Dependency graph acyclic | PASS | |
 | VAL-TASK-05: Estimates present | PASS / N/A for Light | |
+| VAL-TASK-06: Execution graph consistent | PASS | N phases, graph matches deps |
 | SEC coverage: Every SEC-PROP in Tests | PASS | N security properties covered |
 ```
 
@@ -341,7 +382,9 @@ Return the following structured summary to the `/aegis:tasks` command:
     "reqs_total": N,
     "sec_props_covered": N,
     "sec_props_total": N,
-    "estimated_total_hours": N
+    "estimated_total_hours": N,
+    "execution_phases": N,
+    "critical_path_hours": N
   },
   "validation": {
     "critical_failures": [],

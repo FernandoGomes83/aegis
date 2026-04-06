@@ -25,7 +25,6 @@ You receive the following data from `/aegis:validate`:
 ```
 config:
   project_name: string
-  language: "en" | "pt-BR"
   formalism: "light" | "standard" | "formal"
   features: [string]                  # e.g., ["has_authentication", "has_file_upload"]
   security_not_applicable: [string]   # categories declared N/A in .aegis/config.yaml
@@ -93,9 +92,8 @@ report_path: string              # .aegis/reports/validation-YYYY-MM-DD.md
 Write the report to the path provided in `report_path`. The report has exactly
 eight sections in the following order.
 
-Load the i18n label set from `aegis/framework/i18n/{language}.yaml` and apply
-the correct labels and status values throughout. All section headings, column
-names, and status labels must use the configured language.
+Use English labels for all section headings, column names, and status values
+throughout.
 
 ---
 

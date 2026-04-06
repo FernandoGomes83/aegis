@@ -18,12 +18,11 @@ The calling command must provide:
 
 ## Step A — Read API Key
 
-1. Read the `.env` file at the project root using the Read tool.
-2. Look for a line matching `CONTEXT7_API_KEY=<value>` (the value after `=`,
-   trimmed of surrounding quotes and whitespace).
-3. If the `.env` file does not exist, or the variable is not present, or the
-   value is empty → set `context7_available = false` and skip to **Step D**.
-4. Store the value as `context7_key`.
+1. The calling command has already loaded `.aegis/config.yaml` (via preamble).
+   Read the `context7.api_key` field from the config.
+2. If the field is missing, empty, `null`, or equals the placeholder
+   `"YOUR_KEY_HERE"` → set `context7_available = false` and skip to **Step D**.
+3. Store the value as `context7_key`.
 
 ---
 

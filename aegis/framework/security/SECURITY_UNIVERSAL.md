@@ -1,33 +1,33 @@
-# Diretrizes de Segurança — Universal
+# Security Guidelines — Universal
 
-> **OBRIGATÓRIO**: Leia este arquivo inteiro antes de implementar qualquer endpoint, formulário, upload ou lógica que envolva dados do usuário, pagamento ou estado mutável. Estas regras não são opcionais. Aplique em TODO o código do projeto, independente do framework ou linguagem.
+> **MANDATORY**: Read this entire file before implementing any endpoint, form, upload, or logic involving user data, payments, or mutable state. These rules are not optional. Apply them to ALL project code, regardless of framework or language.
 >
-> Este documento é agnóstico de projeto. Adapte os exemplos de código ao seu stack, mas nunca ignore os princípios.
+> This document is project-agnostic. Adapt the code examples to your stack, but never ignore the principles.
 
 ---
 
 ## 1. Race Conditions
 
-Teste race conditions em **qualquer operação** que envolva:
+Test race conditions in **any operation** that involves:
 
-- Saldo, créditos ou tokens
-- Compra, pagamento ou transação financeira
-- Curtida, favorito, voto ou qualquer estado que faz toggle
-- Geração ou processamento de conteúdo (evitar processar 2x o mesmo job)
-- Atualização de status (pedido, assinatura, ticket, etc.)
-- Estoque, vagas, ingressos ou qualquer recurso limitado
-- Criação de recursos únicos (username, slug, código de cupom)
+- Balance, credits, or tokens
+- Purchase, payment, or financial transaction
+- Like, favorite, vote, or any state that toggles
+- Content generation or processing (avoid processing the same job twice)
+- Status update (order, subscription, ticket, etc.)
+- Inventory, seats, tickets, or any limited resource
+- Creation of unique resources (username, slug, coupon code)
 
-**Como testar**: Dispare requisições simultâneas idênticas E com variações (IDs diferentes, quantidades diferentes, combinações de parâmetros). Faça isso em TODOS os endpoints que fazem escrita.
+**How to test**: Fire simultaneous identical requests AND with variations (different IDs, different quantities, parameter combinations). Do this on ALL endpoints that perform writes.
 
-**Princípios de implementação**:
-- Use transações com nível de isolamento adequado (Serializable para operações financeiras)
-- Use locks otimistas (versioning) ou pessimistas (SELECT FOR UPDATE) dependendo do caso
-- Para filas de processamento, use idempotency keys — se o mesmo job chegar 2x, execute apenas 1x
-- Para webhooks de gateways de pagamento, sempre verifique se o recurso já foi processado antes de agir
+**Implementation principles**:
+- Use transactions with an appropriate isolation level (Serializable for financial operations)
+- Use optimistic locks (versioning) or pessimistic locks (SELECT FOR UPDATE) depending on the case
+- For processing queues, use idempotency keys — if the same job arrives twice, execute only once
+- For payment gateway webhooks, always check if the resource has already been processed before acting
 
 ```
-// Pseudocódigo — adapte ao seu ORM/linguagem
+// Pseudocode — adapt to your ORM/language
 transaction(isolationLevel: SERIALIZABLE) {
   resource = findById(id)
   if (resource.status != EXPECTED_STATUS) throw AlreadyProcessedError
@@ -36,105 +36,105 @@ transaction(isolationLevel: SERIALIZABLE) {
 }
 ```
 
-**Atenção especial com webhooks**: Gateways (Stripe, Mercado Pago, PayPal, PagSeguro, Asaas, etc.) podem enviar o mesmo webhook múltiplas vezes. Use o ID do evento como idempotency key e armazene eventos já processados.
+**Special attention with webhooks**: Gateways (Stripe, Mercado Pago, PayPal, PagSeguro, Asaas, etc.) may send the same webhook multiple times. Use the event ID as an idempotency key and store already-processed events.
 
 ---
 
 ## 2. IDOR (Insecure Direct Object Reference)
 
-Valide IDOR em **todo endpoint que recebe ID** — sempre cheque no backend se o recurso pertence ao usuário autenticado.
+Validate IDOR on **every endpoint that receives an ID** — always check on the backend that the resource belongs to the authenticated user.
 
 ```
-// ❌ ERRADO — qualquer usuário acessa qualquer recurso
+// ❌ WRONG — any user can access any resource
 resource = findById(params.id)
 
-// ✅ CORRETO — verifica propriedade
+// ✅ CORRECT — verifies ownership
 resource = findByIdAndOwner(params.id, authenticatedUser.id)
 if (!resource) return 404
 ```
 
-**Onde aplicar (sem exceção)**:
-- Todo endpoint que recebe ID de recurso na URL (path param ou query param)
-- Todo endpoint que retorna dados de um recurso específico
-- Todo endpoint que modifica ou deleta um recurso
-- Endpoints de download de arquivos privados
-- Endpoints de webhook — validar assinatura criptográfica, nunca confiar apenas no payload
-- Listagens — sempre filtrar por owner, nunca retornar todos os registros
+**Where to apply (no exceptions)**:
+- Every endpoint that receives a resource ID in the URL (path param or query param)
+- Every endpoint that returns data for a specific resource
+- Every endpoint that modifies or deletes a resource
+- Private file download endpoints
+- Webhook endpoints — validate cryptographic signature, never trust only the payload
+- Listings — always filter by owner, never return all records
 
-**Regra de ouro**: Se o endpoint recebe um ID, o backend DEVE verificar que `resource.ownerId === currentUser.id` (ou papel equivalente). Sem exceção.
-
----
-
-## 3. Validação de Input
-
-Limitar tamanho de input em **todos os campos, sem exceção**. Usar uma biblioteca de schema validation (zod, yup, joi, pydantic, etc.) em todo endpoint.
-
-**Princípios**:
-- Defina o schema ANTES de escrever a lógica — todo campo tem tipo, tamanho mínimo, tamanho máximo e formato esperado
-- Rejeite a requisição inteira se qualquer campo falhar na validação
-- Retorne erros genéricos ao client, erros detalhados apenas nos logs
-
-**Regras obrigatórias para todo campo**:
-
-| Tipo de campo | Validações obrigatórias |
-|---------------|------------------------|
-| String (texto livre) | min, max, trim, sanitizar HTML |
-| String (enum) | Lista fixa de valores permitidos |
-| Email | Formato de email + max 254 chars |
-| URL | Protocolo https + hostname allowlist |
-| Número | min, max, integer vs float |
-| Data | Formato válido, range aceitável (não futura se inapropriado) |
-| Booleano | Apenas true/false, sem coerção de strings |
-| Array | maxItems, validar cada item individualmente |
-| Objeto | Validar cada propriedade, rejeitar propriedades extras |
-
-**Regras adicionais**:
-- Sanitizar HTML em qualquer campo que aceite texto livre — tanto no client (DOMPurify) quanto no server (sanitize-html ou equivalente)
-- Nunca interpolar input do usuário em: queries SQL (use parameterized queries), prompts de IA (evitar prompt injection), templates de email (evitar header injection), comandos shell (nunca fazer isso), expressões regulares (evitar ReDoS)
-- Campos de nome/texto pessoal: permitir apenas letras (incluindo acentos/unicode), espaços, hífens e apóstrofos
-- Limitar rate de submissão de formulários (ex: 1 submit a cada 5 segundos por IP)
-- Payloads JSON: limitar tamanho total do body (ex: max 1MB para APIs normais, configurar no middleware)
-- Query strings: validar e limitar — não aceitar parâmetros inesperados
+**Golden rule**: If the endpoint receives an ID, the backend MUST verify that `resource.ownerId === currentUser.id` (or equivalent role). No exceptions.
 
 ---
 
-## 4. Upload de Arquivos
+## 3. Input Validation
 
-Validar uploads por **MIME type E magic bytes**, não só extensão. Extensão é trivial de falsificar.
+Limit input size on **all fields, no exceptions**. Use a schema validation library (zod, yup, joi, pydantic, etc.) on every endpoint.
 
-**Camadas de validação (aplicar TODAS)**:
+**Principles**:
+- Define the schema BEFORE writing the logic — every field has a type, minimum size, maximum size, and expected format
+- Reject the entire request if any field fails validation
+- Return generic errors to the client, detailed errors only in logs
 
-1. **Tamanho**: Limite máximo por tipo (ex: 10MB para imagens, 50MB para documentos). Rejeitar antes de processar.
+**Mandatory rules for every field**:
 
-2. **Magic bytes**: Ler os primeiros bytes do arquivo para identificar o tipo real. Use bibliotecas: `file-type` (Node), `python-magic` (Python), `mimetype` (Go).
+| Field type | Mandatory validations |
+|------------|---------------------|
+| String (free text) | min, max, trim, sanitize HTML |
+| String (enum) | Fixed list of allowed values |
+| Email | Email format + max 254 chars |
+| URL | https protocol + hostname allowlist |
+| Number | min, max, integer vs float |
+| Date | Valid format, acceptable range (not future if inappropriate) |
+| Boolean | Only true/false, no string coercion |
+| Array | maxItems, validate each item individually |
+| Object | Validate each property, reject extra properties |
 
-3. **Extensão**: Verificar como redundância, nunca como única validação.
-
-4. **Decodificação**: Tentar processar o arquivo como o tipo esperado (ex: abrir como imagem com sharp/Pillow). Se falhar, rejeitar — pode ser um arquivo malicioso disfarçado.
-
-5. **Resolução/dimensões** (para imagens): Limitar resolução máxima para evitar pixel flood attacks (ex: max 8000x8000).
-
-**Regras de armazenamento**:
-- Nunca servir uploads diretamente do seu servidor — use storage externo (S3, R2, GCS) com URLs assinadas e TTL
-- Renomear arquivo com UUID — nunca usar o nome original (evitar path traversal)
-- Strip EXIF/metadata antes de armazenar — fotos podem conter GPS, dados do dispositivo, informações pessoais
-- Processar e re-encodar o arquivo antes de armazenar (ex: re-comprimir imagem com sharp/Pillow) — elimina payloads escondidos
-- Verificar antivírus em uploads de documentos (se aplicável ao seu caso de uso)
-- Definir Content-Disposition como `attachment` para downloads, nunca `inline` para tipos perigosos
-
-**Nunca**:
-- Armazenar uploads na mesma pasta que o código da aplicação
-- Executar ou interpretar conteúdo de uploads
-- Confiar no Content-Type do header HTTP (é definido pelo client)
+**Additional rules**:
+- Sanitize HTML in any field that accepts free text — both on the client (DOMPurify) and on the server (sanitize-html or equivalent)
+- Never interpolate user input in: SQL queries (use parameterized queries), AI prompts (avoid prompt injection), email templates (avoid header injection), shell commands (never do this), regular expressions (avoid ReDoS)
+- Name/personal text fields: allow only letters (including accents/unicode), spaces, hyphens, and apostrophes
+- Limit form submission rate (e.g., 1 submit every 5 seconds per IP)
+- JSON payloads: limit total body size (e.g., max 1MB for normal APIs, configure in middleware)
+- Query strings: validate and limit — do not accept unexpected parameters
 
 ---
 
-## 5. URLs e Recursos Externos
+## 4. File Uploads
 
-Restringir URLs ao seu domínio e **não aceitar URLs arbitrárias do client**.
+Validate uploads by **MIME type AND magic bytes**, not just extension. Extensions are trivial to forge.
+
+**Validation layers (apply ALL)**:
+
+1. **Size**: Maximum limit per type (e.g., 10MB for images, 50MB for documents). Reject before processing.
+
+2. **Magic bytes**: Read the first bytes of the file to identify the actual type. Use libraries: `file-type` (Node), `python-magic` (Python), `mimetype` (Go).
+
+3. **Extension**: Check as redundancy, never as the sole validation.
+
+4. **Decoding**: Try to process the file as the expected type (e.g., open as image with sharp/Pillow). If it fails, reject — it may be a malicious file in disguise.
+
+5. **Resolution/dimensions** (for images): Limit maximum resolution to prevent pixel flood attacks (e.g., max 8000x8000).
+
+**Storage rules**:
+- Never serve uploads directly from your server — use external storage (S3, R2, GCS) with signed URLs and TTL
+- Rename the file with a UUID — never use the original name (avoid path traversal)
+- Strip EXIF/metadata before storing — photos may contain GPS, device data, personal information
+- Process and re-encode the file before storing (e.g., re-compress image with sharp/Pillow) — eliminates hidden payloads
+- Scan uploads for viruses on document uploads (if applicable to your use case)
+- Set Content-Disposition to `attachment` for downloads, never `inline` for dangerous types
+
+**Never**:
+- Store uploads in the same folder as the application code
+- Execute or interpret content from uploads
+- Trust the Content-Type from the HTTP header (it is set by the client)
+
+---
+
+## 5. URLs and External Resources
+
+Restrict URLs to your domain and **do not accept arbitrary URLs from the client**.
 
 ```
-// Pseudocódigo
+// Pseudocode
 function isValidResourceUrl(url):
   parsed = parseUrl(url)
   if parsed.hostname NOT IN allowedHosts: return false
@@ -143,280 +143,317 @@ function isValidResourceUrl(url):
   return true
 ```
 
-**Nunca**:
-- Aceitar URLs arbitrárias do client para renderizar imagens ou fazer embed (SSRF)
-- Fazer fetch server-side de URLs fornecidas pelo usuário sem validação rigorosa
-- Usar query strings para passar paths de arquivo internos
-- Redirecionar para URLs fornecidas pelo usuário sem validar contra allowlist (Open Redirect)
-- Confiar em URLs de callbacks/webhooks sem validar assinatura
+**Never**:
+- Accept arbitrary URLs from the client to render images or embed content (SSRF)
+- Perform server-side fetch of user-provided URLs without rigorous validation
+- Use query strings to pass internal file paths
+- Redirect to user-provided URLs without validating against an allowlist (Open Redirect)
+- Trust callback/webhook URLs without validating the signature
 
-**Se PRECISAR fazer fetch de URL externa** (ex: metadata de link):
-- Allowlist de domínios
-- Timeout curto (max 5s)
-- Limitar tamanho da resposta
-- Não seguir redirects para domínios fora da allowlist
-- Bloquear IPs privados/internos (127.0.0.1, 10.x.x.x, 192.168.x.x, etc.) — previne SSRF
-
----
-
-## 6. Lógica de Negócio e Timing
-
-Revise toda lógica que envolve **janelas de tempo** para evitar exploração de timing.
-
-**Pagamentos e transações financeiras**:
-- Confirmação do gateway → só então executar a ação (entregar produto, ativar assinatura, etc.)
-- Nunca confiar no client para informar que o pagamento foi feito
-- Validar valor pago vs. valor esperado no server (evitar manipulação de preço)
-- Links/tokens de acesso a recursos pagos devem ter TTL
-- URLs assinadas com expiração para downloads de conteúdo pago
-
-**Reembolso / Cancelamento**:
-- Definir janela clara e validar no backend
-- Verificar condições antes de aprovar (downloads feitos, uso do serviço, etc.)
-- Revogar acessos imediatamente após reembolso
-
-**Vouchers, convites e códigos**:
-- Gerar com entropia suficiente (UUID v4 ou superior, nunca sequencial)
-- Definir TTL e número máximo de resgates
-- Validar que não foi resgatado antes de processar
-- Rate limit para tentativas de resgate (evitar brute force)
-
-**Promoções e cupons**:
-- Validar no backend — nunca confiar no client
-- Limite de uso por cupom E por usuário
-- Verificar validade no server (não confiar no timezone do client)
-- Logar uso para auditoria
-
-**Assinaturas e trials**:
-- Verificar status da assinatura no server a cada request protegido
-- Não confiar em flags locais/cookies para determinar acesso
-- Tratar webhook de cancelamento imediatamente
+**If you MUST fetch an external URL** (e.g., link metadata):
+- Domain allowlist
+- Short timeout (max 5s)
+- Limit response size
+- Do not follow redirects to domains outside the allowlist
+- Block private/internal IPs (127.0.0.1, 10.x.x.x, 192.168.x.x, etc.) — prevents SSRF
 
 ---
 
-## 7. Autenticação e Sessão
+## 6. Business Logic and Timing
 
-**Regras fundamentais**:
-- Nunca implemente autenticação do zero — use bibliotecas consolidadas (NextAuth, Auth.js, Passport, Django Auth, etc.)
-- Tokens JWT: TTL curto (15min–1h), refresh tokens com rotação
-- Sessões: armazenar server-side (Redis/DB), cookie httpOnly + secure + sameSite
-- Rate limit em login: max 5 tentativas em 15 minutos por IP/email
-- Lockout após tentativas excessivas (temporário, com reset por email)
-- Nunca retornar mensagens diferentes para "email não existe" vs. "senha errada" (evitar enumeração de usuários)
-- Logout deve invalidar a sessão server-side, não apenas apagar o cookie
-- Forçar re-autenticação para ações sensíveis (alterar email, alterar senha, deletar conta)
-- Implementar CSRF protection em todos os formulários que mudam estado
+Review all logic involving **time windows** to prevent timing exploitation.
 
-**API Keys (se aplicável)**:
-- Armazenar apenas o hash, nunca o valor plain text
-- Permitir múltiplas keys por usuário com nomes descritivos
-- Permitir revogação individual
-- Logar uso para auditoria
+**Payments and financial transactions**:
+- Gateway confirmation → only then execute the action (deliver product, activate subscription, etc.)
+- Never trust the client to report that payment was made
+- Validate paid amount vs. expected amount on the server (prevent price manipulation)
+- Links/access tokens to paid resources must have a TTL
+- Signed URLs with expiration for paid content downloads
+
+**Refund / Cancellation**:
+- Define a clear window and validate on the backend
+- Check conditions before approving (downloads made, service usage, etc.)
+- Revoke access immediately after refund
+
+**Vouchers, invitations, and codes**:
+- Generate with sufficient entropy (UUID v4 or higher, never sequential)
+- Define TTL and maximum number of redemptions
+- Validate that it has not been redeemed before processing
+- Rate limit for redemption attempts (prevent brute force)
+
+**Promotions and coupons**:
+- Validate on the backend — never trust the client
+- Usage limit per coupon AND per user
+- Verify validity on the server (do not trust the client timezone)
+- Log usage for auditing
+
+**Subscriptions and trials**:
+- Verify subscription status on the server on every protected request
+- Do not trust local flags/cookies to determine access
+- Handle cancellation webhook immediately
 
 ---
 
-## 8. Honeypots e Defesa em Profundidade
+## 7. Authentication and Session
 
-Implementar honeypots como defesa adicional de baixo custo:
+**Fundamental rules**:
+- Never implement authentication from scratch — use established libraries (NextAuth, Auth.js, Passport, Django Auth, etc.)
+- JWT tokens: short TTL (15min–1h), refresh tokens with rotation
+- Sessions: store server-side (Redis/DB), cookie httpOnly + secure + sameSite
+- Rate limit on login: max 5 attempts in 15 minutes per IP/email
+- Lockout after excessive attempts (temporary, with reset via email)
+- Never return different messages for "email does not exist" vs. "wrong password" (prevent user enumeration)
+- Logout must invalidate the session server-side, not just delete the cookie
+- Force re-authentication for sensitive actions (change email, change password, delete account)
+- Implement CSRF protection on all forms that change state
 
-**Honeypot em formulários**:
-- Adicione um campo hidden no formulário (ex: `name="website"` ou `name="company_url"`)
-- O campo fica invisível para humanos (CSS: `position: absolute; left: -9999px`)
-- Bots preenchem todos os campos — se esse campo vier preenchido, é bot
-- Retorne 200 com response fake (não alertar o bot que foi detectado)
+**API Keys (if applicable)**:
+- Store only the hash, never the plain text value
+- Allow multiple keys per user with descriptive names
+- Allow individual revocation
+- Log usage for auditing
 
-**Endpoints falsos (decoy)**:
-- Crie rotas que parecem sensíveis mas retornam dados fictícios e logam o acesso:
+---
+
+## 8. Honeypots and Defense in Depth
+
+Implement honeypots as an additional low-cost defense:
+
+**Form honeypot**:
+- Add a hidden field in the form (e.g., `name="website"` or `name="company_url"`)
+- The field is invisible to humans (CSS: `position: absolute; left: -9999px`)
+- Bots fill in all fields — if this field comes filled in, it is a bot
+- Return 200 with a fake response (do not alert the bot that it was detected)
+
+**Decoy endpoints**:
+- Create routes that look sensitive but return fictitious data and log the access:
   - `/api/admin/users`, `/api/v2/export`, `/api/internal/config`
   - `/wp-admin/`, `/phpmyadmin/`, `/.env`, `/xmlrpc.php`
-- Todo acesso a esses endpoints → alerta no monitoramento + block IP temporário
-- Custo de implementação: quase zero. Custo para o atacante: tempo desperdiçado.
+- Every access to these endpoints → monitoring alert + temporary IP block
+- Implementation cost: near zero. Cost to the attacker: wasted time.
 
-**Defesa em profundidade (princípio geral)**:
-- Nunca confie em uma única camada de proteção
-- Valide no client E no server
-- Rate limit na edge E na aplicação
-- Autentique E verifique autorização em cada camada
+**Defense in depth (general principle)**:
+- Never rely on a single layer of protection
+- Validate on the client AND on the server
+- Rate limit at the edge AND in the application
+- Authenticate AND verify authorization at each layer
 
 ---
 
-## 9. Headers de Segurança
+## 9. Security Headers
 
-Configurar os seguintes headers em TODAS as respostas HTTP. Adapte ao seu framework:
+Configure the following headers on ALL HTTP responses. Adapt to your framework:
 
-| Header | Valor | O que previne |
-|--------|-------|---------------|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Downgrade para HTTP |
+| Header | Value | What it prevents |
+|--------|-------|-----------------|
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Downgrade to HTTP |
 | `X-Frame-Options` | `SAMEORIGIN` | Clickjacking |
 | `X-Content-Type-Options` | `nosniff` | MIME sniffing |
-| `Referrer-Policy` | `origin-when-cross-origin` | Leak de URLs sensíveis |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Acesso indevido a hardware |
-| `X-DNS-Prefetch-Control` | `on` | Performance (não segurança) |
+| `Referrer-Policy` | `origin-when-cross-origin` | Sensitive URL leaks |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Unauthorized hardware access |
+| `X-DNS-Prefetch-Control` | `on` | Performance (not security) |
 
 **Content-Security-Policy (CSP)**:
-- Comece restritivo: `default-src 'self'`
-- Adicione exceções conforme necessário para scripts/imagens de terceiros (analytics, CDN, payment gateway, ads)
-- Nunca use `unsafe-inline` para scripts em produção se possível — use nonces
-- Se precisar de `unsafe-inline` (ex: para styled-components), documente o motivo
-- Teste a CSP no modo report-only antes de ativar
+- Start restrictive: `default-src 'self'`
+- Add exceptions as needed for third-party scripts/images (analytics, CDN, payment gateway, ads)
+- Never use `unsafe-inline` for scripts in production if possible — use nonces
+- If you need `unsafe-inline` (e.g., for styled-components), document the reason
+- Test CSP in report-only mode before activating
 
 **CORS**:
-- Nunca use `Access-Control-Allow-Origin: *` em APIs autenticadas
-- Defina explicitamente os domínios permitidos
-- Cuidado com credenciais: `Access-Control-Allow-Credentials: true` exige origin explícito
+- Never use `Access-Control-Allow-Origin: *` on authenticated APIs
+- Explicitly define the allowed domains
+- Be careful with credentials: `Access-Control-Allow-Credentials: true` requires an explicit origin
 
 ---
 
 ## 10. Rate Limiting
 
-Aplique rate limiting em **todos os endpoints públicos**. Adapte os limites ao seu caso de uso.
+Apply rate limiting on **all public endpoints**. Adapt the limits to your use case.
 
-**Referência de limites por tipo de endpoint**:
+**Reference limits by endpoint type**:
 
-| Tipo de endpoint | Limite sugerido | Janela |
-|------------------|----------------|--------|
-| Login / Registro | 5–10 requests | 15 minutos |
-| Upload de arquivo | 5 requests | 1 minuto |
-| Processamento / Geração | 3–5 requests | 1 minuto |
-| Checkout / Pagamento | 10 requests | 1 minuto |
-| APIs de leitura (autenticadas) | 60 requests | 1 minuto |
-| APIs de leitura (públicas) | 30 requests | 1 minuto |
-| Webhooks | 30 requests | 1 minuto |
-| Páginas públicas | 120 requests | 1 minuto |
-| Password reset | 3 requests | 15 minutos |
+| Endpoint type | Suggested limit | Window |
+|---------------|----------------|--------|
+| Login / Registration | 5–10 requests | 15 minutes |
+| File upload | 5 requests | 1 minute |
+| Processing / Generation | 3–5 requests | 1 minute |
+| Checkout / Payment | 10 requests | 1 minute |
+| Read APIs (authenticated) | 60 requests | 1 minute |
+| Read APIs (public) | 30 requests | 1 minute |
+| Webhooks | 30 requests | 1 minute |
+| Public pages | 120 requests | 1 minute |
+| Password reset | 3 requests | 15 minutes |
 
-**Implementação**:
-- Use Redis/Upstash para rate limiting distribuído
-- Identifique por IP + userId (se autenticado)
-- Retorne `429 Too Many Requests` com header `Retry-After`
-- Considere rate limiting progressivo: primeiro request rápido, depois delay crescente
-- Para APIs públicas de alto tráfego, considere rate limiting na edge (Cloudflare, Vercel Edge, etc.)
-
----
-
-## 11. Dados Sensíveis e Privacidade
-
-### Nunca armazenar:
-- Dados de cartão de crédito (delegue ao gateway de pagamento)
-- Senhas em plain text (use bcrypt/argon2 com salt)
-- Tokens de API em plain text no banco (armazene apenas o hash)
-- Dados temporários de processamento após conclusão (ex: fotos usadas para gerar arte)
-
-### Armazenar com cuidado:
-- Email: necessário para comunicação → encriptar em repouso se possível
-- Dados pessoais: mínimo necessário para o serviço funcionar (princípio de minimização)
-- Logs: nunca logar senhas, tokens, dados de cartão, dados pessoais sensíveis
-
-### Privacidade e conformidade (LGPD / GDPR):
-- Política de privacidade clara e acessível no site
-- Opção de deletar dados a qualquer momento (direito ao esquecimento)
-- Consentimento explícito para emails de marketing (checkbox não pré-marcado)
-- Base legal documentada para cada tipo de dado coletado
-- Notificar usuários em caso de breach
-- Exportação de dados pessoais em formato legível (direito de portabilidade)
-- Distinguir dados necessários para o serviço vs. dados de marketing
-
-### Secrets e variáveis de ambiente:
-- Nunca commitar secrets no repositório (use .env + .gitignore)
-- Rotacionar secrets periodicamente
-- Usar secret managers em produção (Vault, AWS Secrets Manager, Vercel env, etc.)
-- Diferentes secrets para dev/staging/production
+**Implementation**:
+- Use Redis/Upstash for distributed rate limiting
+- Identify by IP + userId (if authenticated)
+- Return `429 Too Many Requests` with `Retry-After` header
+- Consider progressive rate limiting: first request fast, then increasing delay
+- For high-traffic public APIs, consider rate limiting at the edge (Cloudflare, Vercel Edge, etc.)
 
 ---
 
-## 12. Logging e Monitoramento
+## 11. Sensitive Data and Privacy
 
-**O que logar (sempre)**:
-- Tentativas de autenticação (sucesso e falha)
-- Acessos a recursos protegidos
-- Erros de validação (input inválido pode indicar ataque)
-- Acessos a honeypots
+### Never store:
+- Credit card data (delegate to the payment gateway)
+- Passwords in plain text (use bcrypt/argon2 with salt)
+- API tokens in plain text in the database (store only the hash)
+- Temporary processing data after completion (e.g., photos used to generate artwork)
+
+### Store with care:
+- Email: necessary for communication → encrypt at rest if possible
+- Personal data: minimum necessary for the service to function (minimization principle)
+- Logs: never log passwords, tokens, card data, sensitive personal data
+
+### Privacy and compliance (LGPD / GDPR):
+- Clear and accessible privacy policy on the site
+- Option to delete data at any time (right to be forgotten)
+- Explicit consent for marketing emails (unchecked checkbox)
+- Documented legal basis for each type of data collected
+- Notify users in case of a breach
+- Export personal data in a readable format (right to portability)
+- Distinguish between data necessary for the service vs. marketing data
+
+### Secrets and environment variables:
+- Never commit secrets to the repository (use .env + .gitignore) — see [Section 16](#16-environment-files-and-secrets-in-version-control) for detailed rules
+- Rotate secrets periodically
+- Use secret managers in production (Vault, AWS Secrets Manager, Vercel env, etc.)
+- Different secrets for dev/staging/production
+
+---
+
+## 12. Logging and Monitoring
+
+**What to log (always)**:
+- Authentication attempts (success and failure)
+- Access to protected resources
+- Validation errors (invalid input may indicate an attack)
+- Honeypot access
 - Rate limit hits
-- Erros de pagamento
-- Alterações em dados sensíveis (email, senha, permissões)
+- Payment errors
+- Changes to sensitive data (email, password, permissions)
 
-**O que NUNCA logar**:
-- Senhas (nem em caso de erro)
-- Tokens de sessão / JWT / API keys
-- Dados de cartão de crédito
-- Dados pessoais completos (logar apenas IDs/hashes)
+**What to NEVER log**:
+- Passwords (not even in case of error)
+- Session tokens / JWT / API keys
+- Credit card data
+- Complete personal data (log only IDs/hashes)
 
-**Formato**:
-- Log estruturado (JSON) com: timestamp, level, message, userId, requestId, IP, userAgent
-- Incluir requestId para correlacionar logs de uma mesma requisição
-- Alertas automáticos para: picos de erros 4xx/5xx, acessos a honeypots, rate limit excessivo, tentativas de login repetidas
-
----
-
-## 13. Dependências e Supply Chain
-
-- Mantenha dependências atualizadas — rode `npm audit` / `pip audit` / equivalente regularmente
-- Use lockfile (package-lock.json, poetry.lock, etc.) e commite no repositório
-- Revise changelogs antes de atualizar dependências major
-- Prefira dependências com manutenção ativa e muitos downloads/stars
-- Considere usar Dependabot / Renovate para atualizações automáticas
-- Nunca instale pacotes de sources não confiáveis
-- Para pacotes críticos (auth, crypto, payment), prefira bibliotecas oficiais do provedor
+**Format**:
+- Structured logging (JSON) with: timestamp, level, message, userId, requestId, IP, userAgent
+- Include requestId to correlate logs from the same request
+- Automatic alerts for: spikes in 4xx/5xx errors, honeypot access, excessive rate limiting, repeated login attempts
 
 ---
 
-## 14. Checklist de Segurança por Feature
+## 13. Dependencies and Supply Chain
 
-Antes de considerar **qualquer feature** pronta para produção, verificar:
-
-### Input e dados
-- [ ] Todos os inputs validados com schema validation (tipos, tamanhos, formatos)
-- [ ] HTML sanitizado em campos de texto livre
-- [ ] Sem interpolação de input do usuário em queries/prompts/templates/comandos
-- [ ] Payload size limitado
-
-### Autorização
-- [ ] IDOR verificado — recurso pertence ao usuário autenticado
-- [ ] Permissões/roles verificados no backend (não confiar no client)
-- [ ] Ações sensíveis exigem re-autenticação
-
-### Proteção
-- [ ] Rate limiting aplicado no endpoint
-- [ ] CSRF protection em formulários que mudam estado
-- [ ] Transação com lock para operações de escrita concorrentes
-
-### Dados
-- [ ] Sem dados sensíveis no response que não deveriam estar lá
-- [ ] Sem console.log/print com dados do usuário em produção
-- [ ] Erro genérico para o client, erro detalhado apenas nos logs
-- [ ] Dados temporários limpos após processamento
-
-### Upload (se aplicável)
-- [ ] Validado por magic bytes + extensão + decodificação
-- [ ] Tamanho limitado
-- [ ] Arquivo renomeado com UUID
-- [ ] EXIF/metadata removidos
-- [ ] Armazenado em storage externo com URL assinada
-
-### URLs e recursos externos (se aplicável)
-- [ ] URLs validadas contra allowlist de domínios
-- [ ] Sem SSRF — sem fetch de URLs arbitrárias server-side
-- [ ] Redirects validados contra allowlist
-
-### Infraestrutura
-- [ ] Headers de segurança presentes
-- [ ] CORS configurado restritivamente
-- [ ] Secrets em variáveis de ambiente (não hardcoded)
-- [ ] Logging adequado sem dados sensíveis
+- Keep dependencies up to date — run `npm audit` / `pip audit` / equivalent regularly
+- Use a lockfile (package-lock.json, poetry.lock, etc.) and commit it to the repository
+- Review changelogs before updating major dependencies
+- Prefer dependencies with active maintenance and many downloads/stars
+- Consider using Dependabot / Renovate for automatic updates
+- Never install packages from untrusted sources
+- For critical packages (auth, crypto, payment), prefer the provider's official libraries
 
 ---
 
-## 15. Referência Rápida: Top 10 Erros Mais Comuns
+## 14. Security Checklist per Feature
 
-| # | Erro | Consequência | Prevenção |
-|---|------|-------------|-----------|
-| 1 | Não validar tamanho de input | DoS, buffer overflow, custos de storage | Schema validation em tudo |
-| 2 | Confiar no client para autorização | Acesso indevido a dados alheios | IDOR check no backend sempre |
-| 3 | Validar upload só por extensão | Upload de malware disfarçado | Magic bytes + decodificação |
-| 4 | Fetch de URL fornecida pelo usuário | SSRF, acesso a rede interna | Allowlist + bloqueio de IPs privados |
-| 5 | Webhook sem verificação de assinatura | Ações fraudulentas | Validar HMAC/assinatura sempre |
-| 6 | Sem rate limit em login | Brute force de senhas | 5 tentativas / 15 min |
-| 7 | Sem transação em operação financeira | Race condition, duplicação | Serializable + idempotency key |
-| 8 | Logar dados sensíveis | Leak de senhas/tokens via logs | Nunca logar credentials |
-| 9 | Secrets no repositório | Comprometimento total | .env + secret manager |
-| 10 | CSP ausente ou permissiva | XSS, data exfiltration | CSP restritiva desde o dia 1 |
+Before considering **any feature** ready for production, verify:
+
+### Input and data
+- [ ] All inputs validated with schema validation (types, sizes, formats)
+- [ ] HTML sanitized in free text fields
+- [ ] No interpolation of user input in queries/prompts/templates/commands
+- [ ] Payload size limited
+
+### Authorization
+- [ ] IDOR verified — resource belongs to the authenticated user
+- [ ] Permissions/roles verified on the backend (do not trust the client)
+- [ ] Sensitive actions require re-authentication
+
+### Protection
+- [ ] Rate limiting applied on the endpoint
+- [ ] CSRF protection on forms that change state
+- [ ] Transaction with lock for concurrent write operations
+
+### Data
+- [ ] No sensitive data in the response that should not be there
+- [ ] No console.log/print with user data in production
+- [ ] Generic error for the client, detailed error only in logs
+- [ ] Temporary data cleaned up after processing
+
+### Upload (if applicable)
+- [ ] Validated by magic bytes + extension + decoding
+- [ ] Size limited
+- [ ] File renamed with UUID
+- [ ] EXIF/metadata removed
+- [ ] Stored in external storage with signed URL
+
+### URLs and external resources (if applicable)
+- [ ] URLs validated against domain allowlist
+- [ ] No SSRF — no fetching arbitrary URLs server-side
+- [ ] Redirects validated against allowlist
+
+### Infrastructure
+- [ ] Security headers present
+- [ ] CORS configured restrictively
+- [ ] Secrets in environment variables (not hardcoded)
+- [ ] Adequate logging without sensitive data
+
+---
+
+## 15. Quick Reference: Top 10 Most Common Mistakes
+
+| # | Mistake | Consequence | Prevention |
+|---|---------|-------------|------------|
+| 1 | Not validating input size | DoS, buffer overflow, storage costs | Schema validation on everything |
+| 2 | Trusting the client for authorization | Unauthorized access to others' data | IDOR check on the backend always |
+| 3 | Validating upload only by extension | Disguised malware upload | Magic bytes + decoding |
+| 4 | Fetching user-provided URL | SSRF, internal network access | Allowlist + private IP blocking |
+| 5 | Webhook without signature verification | Fraudulent actions | Always validate HMAC/signature |
+| 6 | No rate limit on login | Password brute force | 5 attempts / 15 min |
+| 7 | No transaction on financial operation | Race condition, duplication | Serializable + idempotency key |
+| 8 | Logging sensitive data | Password/token leak via logs | Never log credentials |
+| 9 | Secrets in the repository | Total compromise | .env + secret manager |
+| 10 | Absent or permissive CSP | XSS, data exfiltration | Restrictive CSP from day 1 |
+
+---
+
+## 16. Environment Files and Secrets in Version Control
+
+NEVER commit .env files, .env.local, .env.production, or any file containing secrets to the repository.
+
+**Required .gitignore entries:**
+
+```
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+```
+
+**Pre-commit check (mandatory):**
+
+Before every commit, verify no secrets are staged:
+
+```
+git diff --cached --name-only | grep -E '\.env|credentials|\.pem|\.key'
+```
+
+If any match, unstage immediately. No exceptions.
+
+**Build command enforcement:**
+
+The `/aegis:build` stop hook rejects TASK_COMPLETE if any staged file matches the secrets pattern. This is a hard block.
+
+**Additional rules:**
+- Never hardcode API keys, database URLs, or auth tokens in source code
+- Use environment variables or secret managers (Vault, AWS Secrets Manager, Vercel env)
+- Different secrets for dev/staging/production environments
+- Rotate secrets periodically
+- If a secret is accidentally committed, rotate it immediately — removing from git history is not enough

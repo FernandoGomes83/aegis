@@ -55,7 +55,6 @@ Read and parse every artifact in order. Extract the following:
 ### From `.aegis/config.yaml`
 
 - `project.name` — used in the tests.md header
-- `project.language` — select the i18n label set from `aegis/framework/i18n/`
 - `formalism` — controls test depth (light / standard / formal); never affects security
 - `stack.test_framework` — the testing tool to use for RED test files (e.g., `vitest`, `pytest`, `jest`, `go test`, `rspec`)
 - `stack.property_testing` — the property-based testing library (e.g., `fast-check`, `hypothesis`, `gopter`, `rantly`)
@@ -134,7 +133,9 @@ Use this mapping table to determine the test type and timing for each source ID:
 ## Step 3 — Generate tests.md
 
 Dispatch to `aegis/agents/tests-agent.md` with the full parsed context from
-Step 1 and the test map from Step 2.
+Step 1 and the test map from Step 2. **Do NOT spawn multiple subagents** to
+parallelize tests.md generation or test file writing — the agent handles
+everything sequentially itself.
 
 Pass the following additional context to the agent:
 - **documentation_context**: compiled documentation snippets from Step 1.5 (may be empty if lookup was unavailable). When non-empty, use it as the source of truth for test framework imports, assertion syntax, configuration patterns, and mocking utilities.
@@ -195,13 +196,18 @@ Write actual test files using the project's configured `test_framework` and
 `property_testing` library. These files are the RED phase of TDD — they must
 import code that does not exist yet and must fail when run.
 
+**Execution constraint:** The tests-agent writes all files sequentially using
+the Write tool. Do NOT use the Agent tool to spawn parallel subagents for file
+generation — this causes permission conflicts and OOM failures. Group related
+tests into shared files to keep the total file count under ~20.
+
 ### File locations
 
 | Test type | Directory | File naming convention |
 |-----------|-----------|----------------------|
-| Property-based (PROP-* and SEC-PROP-*) | `tests/properties/` | `{prop-id}.test.{ext}` |
-| End-to-end (REQ-*) | `tests/e2e/` | `{req-id}.test.{ext}` |
-| Integration / contract | `tests/integration/` | `{int-id}.test.{ext}` |
+| Property-based (PROP-* and SEC-PROP-*) | `tests/properties/` | grouped by domain area |
+| End-to-end (REQ-*) | `tests/e2e/` | one file per REQ-NNN |
+| Integration / contract | `tests/integration/` | one file per service boundary |
 
 Use the file extension appropriate for the project language:
 `.test.ts` / `.test.js` for JavaScript/TypeScript, `.py` for Python,

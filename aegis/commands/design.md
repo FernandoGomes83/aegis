@@ -41,12 +41,9 @@ If either file is missing, do not proceed.
 Read `.aegis/config.yaml` and extract:
 
 - `project.name` — used in the artifact header
-- `project.language` — select i18n label set from `aegis/framework/i18n/`
 - `formalism` — `light`, `standard`, or `formal` (default: `standard`)
 - `stack` — any stack keys present: `language`, `runtime`, `libraries`, `data_store`, `deployment`, `auth`, `cache`, `queue`, `storage`
 - `features` — any feature flags present: `has_authentication`, `has_file_upload`, `has_payments`, `has_public_endpoints`, `has_write_operations`, `has_authenticated_resources`, `has_personal_data`
-
-Load the i18n label set for the configured language.
 
 ---
 
@@ -136,7 +133,6 @@ Dispatch to `aegis/agents/design-agent.md` with the following inputs:
 - **stack_config**: the stack section from `.aegis/config.yaml` plus any answers from Step 4
 - **user_decisions**: key/value map of answers collected in Step 4
 - **template**: content of `aegis/framework/templates/design/<formalism>.template.md`
-- **i18n**: loaded label set from Step 1
 - **security_properties**: filtered SEC-PROP entries from Step 2
 - **level_rules**: content of `aegis/framework/levels/<formalism>.md`
 - **req_ids**: list of all REQ-NNN IDs extracted in Step 3
@@ -202,8 +198,6 @@ Warnings (if any):
 
 Next: run /aegis:tasks to generate the implementation plan.
 ```
-
-Use the i18n label set for all section headings in the summary if the project language is not English.
 
 ---
 

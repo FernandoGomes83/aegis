@@ -44,12 +44,6 @@ user_decisions:                # key/value answers from design direction prompts
   responsive_strategy: string  # "mobile-first", "desktop-first"
   accessibility_level: string  # "A", "AA", "AAA"
 template: string               # content of aegis/framework/templates/ui-design/<level>.template.md
-i18n:                          # loaded label set from aegis/framework/i18n/<language>.yaml
-  artifact_titles: { ... }
-  section_titles: { ... }
-  labels: { ... }
-  status: { ... }
-  messages: { ... }
 level_rules: string            # content of aegis/framework/levels/<level>.md
 req_ids: [string]              # all REQ-NNN IDs from requirements.md
 ui_req_ids: [string]           # subset of REQ-NNN IDs that are UI-relevant
@@ -402,11 +396,10 @@ Route: {URL path, e.g., /dashboard, /settings/profile}
 
 ---
 
-## Rule 9 — Use i18n Labels for Section Titles
+## Rule 9 — Use English Labels for Section Titles
 
-Use `i18n.section_titles.*` for all section headings in ui-design.md. Do not
-hard-code English titles when the project language is not English. Apply the
-full i18n label set consistently throughout the file.
+Use English labels for all section headings in ui-design.md. Apply consistent
+labels throughout the file.
 
 ---
 

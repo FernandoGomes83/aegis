@@ -30,7 +30,7 @@ preflight_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
   -G --data-urlencode "query=react" \
   "$BASE_URL/libs/search" 2>/dev/null || echo "000")
 if [ "$preflight_code" = "401" ] || [ "$preflight_code" = "403" ]; then
-  echo "ERROR: Context7 API key is invalid or expired. Check CONTEXT7_API_KEY in .env."
+  echo "ERROR: Context7 API key is invalid or expired. Check context7.api_key in .aegis/config.yaml."
   exit 1
 fi
 if [ "$preflight_code" = "000" ]; then
@@ -67,7 +67,7 @@ for i in "${!LIBS[@]}"; do
   [ -f "$status_file" ] || continue
   code=$(cat "$status_file")
   if [ "$code" = "401" ] || [ "$code" = "403" ]; then
-    echo "ERROR: Context7 API key is invalid or expired. Check CONTEXT7_API_KEY in .env."
+    echo "ERROR: Context7 API key is invalid or expired. Check context7.api_key in .aegis/config.yaml."
     exit 1
   fi
 done

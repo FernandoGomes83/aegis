@@ -35,13 +35,6 @@ user_answers:
 template: <full text of the requirements template for the configured level>
   # sourced from aegis/framework/templates/requirements/<level>.template.md
 
-i18n:
-  artifact_titles: { requirements, design, tasks, tests }
-  section_titles: { introduction, glossary, requirements, security_requirements, ... }
-  labels: { user_story, derives_from, acceptance_criteria, ... }
-  status: { covered, partial, uncovered, pass, fail, ... }
-  messages: { security_note, auto_generated, ... }
-
 sec_reqs:
   - id: SEC-REQ-<KEY>            # e.g., SEC-REQ-INPUT-01
     title: <title>
@@ -103,17 +96,17 @@ all `REQ-NNN` entries. Do not filter, truncate, or reorder them. Do not add
 new SEC-REQs beyond what was provided — the filtering was already done by the
 dispatching command.
 
-Append this note immediately after the section heading, using the i18n
-`messages.security_note` string:
+Append this note immediately after the section heading:
 
 ```
-> **Note (auto-generated):** {i18n.messages.security_note}
+> **Note (auto-generated):** The following security requirements are
+> automatically injected by the Aegis framework. They are present at every
+> formalism level and cannot be removed or suppressed.
 ```
 
-**Rule 5 — Use i18n labels for all section titles and labels.**
-Every section heading, field label (User Story, Derives from, Acceptance
-Criteria, etc.), and status value must use the string from the provided i18n
-label set. Never hard-code English strings when an i18n key is available.
+**Rule 5 — Use English labels for all section titles and labels.**
+Every section heading and field label (User Story, Derives From, Acceptance
+Criteria, etc.) must use consistent English labels throughout the file.
 
 **Rule 6 — No placeholders. Flag missing info.**
 Every requirement must contain concrete, testable acceptance criteria. If the
@@ -163,8 +156,7 @@ Write `requirements.md` using the provided template as the base structure.
 Replace every `{{placeholder}}` in the template with real content. The final
 file must contain:
 
-1. **Artifact header** — project name, generation date, formalism level,
-   and language, using the auto_generated message from i18n.
+1. **Artifact header** — project name, generation date, and formalism level.
 2. **Introduction** — one to four paragraphs (depth scales with level)
    describing the system, its primary actors, key constraints, and (at formal
    level) explicit out-of-scope statements.
@@ -224,7 +216,6 @@ After writing `requirements.md`, return the following structured summary to the
   "flagged_items": N,
   "input_docs_processed": N,
   "formalism_level": "<light|standard|formal>",
-  "language": "<en|pt-BR>",
   "validation": {
     "critical_failures": [],
     "warnings": []

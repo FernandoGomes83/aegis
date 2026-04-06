@@ -461,7 +461,7 @@ version: "1"
 
 project:
   name: "My Project"          # display name, used in artifact headers
-  language: "en"              # document language: "en" or "pt-BR"
+  language: "en"              # product target language (for UI text in the app being built)
 
 formalism: standard           # light | standard | formal
 
@@ -479,6 +479,14 @@ inputs:
 output:
   dir: .aegis/                   # where artifacts are written (default: .aegis/)
 
+build:
+  verifyCommand: null          # shell command to verify build/tests (e.g., "pnpm build && pnpm test")
+                               # when set, the stop hook blocks TASK_COMPLETE if this command fails
+                               # the agent cannot dismiss failures as "pre-existing"
+
+context7:
+  api_key: "YOUR_KEY_HERE"    # paste your Context7 API key, or leave as-is to use WebSearch
+
 # Optional overrides — advanced use only
 # security:
 #   extra_requirements: []    # add project-specific SEC-REQ entries
@@ -488,10 +496,11 @@ output:
 ### Configuration Rules
 
 - `formalism` defaults to `standard` if not set.
-- `language` defaults to `en` if not set.
+- `language` indicates the product target language (for UI text in the app being built). All Aegis documentation artifacts are always in English regardless of this setting. Defaults to `en`.
 - `inputs` must list at least one file or directory. If the list is empty, the requirements agent will warn and proceed with security-only content.
 - The `output.dir` setting cannot be set to the project root (`.` or `/`) to prevent artifacts from polluting the root directory.
 - Security configuration under the optional `security` key can only add entries — it cannot remove or suppress any built-in security requirements or properties.
+- `build.verifyCommand` is optional. When set, the build stop hook runs this command after every TASK_COMPLETE signal. If the command exits non-zero, the task is not advanced and the agent must fix the errors before re-signaling.
 
 ---
 
@@ -583,9 +592,7 @@ aegis/                        (framework installation, not per-project)
       security-properties.yaml
     validation/
       rules.yaml              <- validation rule definitions
-    i18n/
-      en.yaml                 <- English strings
-      pt-BR.yaml              <- Portuguese (Brazil) strings
+    (i18n removed — all artifacts always in English)
   commands/
     init.md                   <- /aegis:init command spec
     requirements.md           <- /aegis:requirements command spec

@@ -277,6 +277,20 @@ light_validation:
       applies_to: tasks.md
       level_gate: [standard, formal]
 
+    - id: VAL-TASK-06
+      check: execution_graph_consistent
+      description: >
+        The Execution Graph section at the bottom of tasks.md must accurately
+        reflect the dependency declarations in each task entry. Every task
+        assigned to a given phase must have all its dependencies in earlier
+        phases. No two tasks in the same phase may depend on each other.
+        A task listed as "parallel with" another task must share the same
+        phase and must not have a dependency path to that task. This check
+        ensures the graph summary and the inline Depends on fields are in
+        agreement.
+      severity: error
+      applies_to: tasks.md
+
   # -------------------------------------------------------------------------
   # Checks that run immediately after tests.md is generated
   # -------------------------------------------------------------------------
