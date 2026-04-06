@@ -65,53 +65,47 @@ into an ordered list called `lookup_targets`.
 
 Run all Context7 lookups in a **single** Bash command using the batch script:
 
-### Token budget
-
-Scale the `tokens` parameter based on target count to stay within budget:
-
-| Target count | Tokens per library | Total budget |
-|--------------|-------------------|--------------|
-| 1–3          | 3000              | ~9,000       |
-| 4–6          | 2500              | ~15,000      |
-| 7–8          | 2000              | ~16,000      |
-
-Never exceed **20,000 tokens total** for documentation context.
-
 ### Execution
 
 Run via the Bash tool:
 
 ```bash
-bash "{AEGIS_HOME}/scripts/aegis-context7.sh" "<context7_key>" "<topic>" <tokens_per_lib> <lib1> [lib2] ...
+bash "{AEGIS_HOME}/scripts/aegis-context7.sh" "<context7_key>" "<query>" <lib1> [lib2] ...
 ```
 
 Where:
 - `<context7_key>` is the API key from Step A
-- `<topic>` is the value passed by the calling command
-- `<tokens_per_lib>` is the per-library token limit from the budget table above
+- `<query>` is the value passed by the calling command (e.g., "architecture patterns, project structure, API conventions")
 - `<lib1> [lib2] ...` are the normalized library names from `lookup_targets`
+
+The Context7 API returns documentation as plain text (`type=txt`). Maximum 8
+libraries per call.
 
 The script handles both phases (library ID resolution + documentation fetch)
 internally with parallel execution and returns a single JSON response.
 
 ### Parsing the output
 
-The script outputs JSON with this structure:
+The script outputs **plain text** — read it directly from the Bash result.
+Do **NOT** pipe through `python3`, `jq`, or any other tool.
 
-```json
-{
-  "results": {
-    "<lib_name>": {"status": "ok", "library_id": "...", "content": "..."},
-    "<lib_name>": {"status": "not_found"}
-  },
-  "summary": {"total": N, "resolved": N, "failed": N}
-}
+Output format:
+
+```
+=== <lib_name> [<library_id>] ===
+<documentation content>
+
+=== FAILED: <lib_name> (not_found|fetch_failed|no_response) ===
+
+--- SUMMARY: N/M resolved, K failed ---
 ```
 
-- For each library with `"status": "ok"`, store its `content` in `library_docs`.
-- For libraries with `"status": "not_found"` or `"fetch_failed"`, proceed to Step D (WebSearch fallback).
-- If the output contains `"error": "auth_failed"`, the API key is invalid or expired. Set `context7_available = false` and skip remaining lookups. Proceed to Step D for all targets.
-- If more than half the lookups fail (check `summary.failed > summary.total / 2`), set `context7_degraded = true` and proceed to Step D for the failed libraries only.
+- For each `=== <lib> [<id>] ===` block, store the content in `library_docs`.
+- For `=== FAILED: ... ===` entries, proceed to Step D (WebSearch fallback).
+- If the output starts with `ERROR: ... API key`, set `context7_available = false`
+  and proceed to Step D for all targets.
+- If more than half the libraries failed (check the SUMMARY line), set
+  `context7_degraded = true` and proceed to Step D for the failed libraries only.
 
 ---
 
