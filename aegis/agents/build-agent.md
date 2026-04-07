@@ -24,18 +24,24 @@ work is verified and committed.
 You receive the following context from `/aegis:build`:
 
 ```
-task_id:        <TASK-NNN>
-task_entry:     <full task block from tasks.md>
-design_context: <referenced PROP-NNN and SEC-PROP-* sections from design.md>
-test_context:   <referenced TEST-* specifications from tests.md — may be empty>
-project_name:   <project.name from config>
-stack:          <project.stack from config>
-level:          <light | standard | formal>
-output_dir:     <path to .aegis/ or configured output directory>
-aegis_home:     <path to Aegis framework root>
-progress:       <contents of {output_dir}/build-progress.md — may be empty>
-iteration:      <current task iteration number>
+task_id:             <TASK-NNN>
+task_entry:          <full task block from tasks.md>
+design_context:      <referenced PROP-NNN and SEC-PROP-* sections from design.md>
+ui_design_context:   <referenced UI-NNN sections from ui-design.md — may be empty>
+frontend_aesthetics: <aesthetic guidelines for frontend tasks — may be empty>
+security_context:    <security guidelines and checklist — always present, depth varies by task>
+test_context:        <referenced TEST-* specifications from tests.md — may be empty>
+project_name:        <project.name from config>
+stack:               <project.stack from config>
+level:               <light | standard | formal>
+output_dir:          <path to .aegis/ or configured output directory>
+aegis_home:          <path to Aegis framework root>
+progress:            <contents of {output_dir}/build-progress.md — may be empty>
+iteration:           <current task iteration number>
 ```
+
+When `frontend_aesthetics` is present, apply its design rules to all UI/frontend
+code produced for this task. The guidelines override default styling choices.
 
 ---
 
@@ -115,9 +121,14 @@ knowledge leads to projects built on deprecated foundations.
 
 ### Rule 4 — Security is non-negotiable
 
+The `security_context` in your input provides the security guidelines for this
+task. For security-tagged tasks (SEC-PROP-*/SEC-REQ-* in Implements), this
+includes the full specification from SECURITY_UNIVERSAL.md and the security
+YAML catalogs. For all tasks, it includes the §14 security checklist.
+
 Every SEC-PROP-* and SEC-REQ-* reference in the task MUST be implemented with
-full rigor. Before implementing any security-related code, read
-`{aegis_home}/framework/security/SECURITY_UNIVERSAL.md`.
+full rigor. Before signaling TASK_COMPLETE, verify every applicable item in the
+security checklist (§14) against your changed files.
 
 Never:
 - Stub, defer, or weaken security controls
@@ -219,7 +230,7 @@ of the following are true:
 Signal format:
 
 ```
-<aegis:signal>TASK_COMPLETE</aegis:signal>
+<aegis:signal>TASK_COMPLETE</aegis:signal> tier:<quick|standard|thorough>
 task: <TASK-NNN>
 commit: <7-char hash>
 verify: <one-line verification result>
@@ -275,13 +286,17 @@ After completing (or failing) a task, append an entry to
 `{output_dir}/build-progress.md`:
 
 ```markdown
-### TASK-NNN: <title>
+### TASK-NNN: <title> — tier:<quick|standard|thorough>
 - **Status**: done | blocked
 - **Commit**: <7-char hash or "none">
 - **Files changed**: <comma-separated list of key files>
 - **Learnings**: <any insight useful for subsequent tasks — patterns discovered,
   gotchas encountered, conventions established>
 ```
+
+For thorough-tier tasks, also include:
+- **Security checklist**: all items passed | <list of failed items>
+- **SEC-\* verified**: <comma-separated list of SEC-PROP/SEC-REQ IDs confirmed>
 
 Read this file at the start of each task. Accumulated learnings from prior
 tasks provide project context that improves implementation quality as the
@@ -361,6 +376,46 @@ coordinator for a `[P]` group):
 The coordinator detects parallel mode from the prompt context. When your prompt
 includes "You are a parallel build agent" or references a parallel group, apply
 these rules automatically.
+
+---
+
+### Rule 17 — Tiered verification
+
+Before signaling TASK_COMPLETE, determine the verification tier based on task
+scope and security impact. Always use the highest applicable tier.
+
+**Thorough** — Apply when ANY of these are true:
+- Task references any SEC-PROP-\*, SEC-REQ-\*, or TEST-SEC-\* ID
+- Task title contains `[SECURITY]`
+- Task modifies more than 10 files
+
+Thorough verification requires:
+1. Run the full verify command (not just related tests)
+2. Run the complete test suite
+3. Walk the security checklist:
+   - [ ] Input validation on all user-facing inputs
+   - [ ] No hardcoded secrets or credentials
+   - [ ] Auth/authz checks present where required
+   - [ ] No injection vectors (SQL, command, XSS)
+   - [ ] Error messages do not leak internals
+4. Confirm every SEC-PROP/SEC-REQ referenced in the task has corresponding
+   implementation (not stubbed, not TODO)
+5. If TEST-SEC-\* entries exist for this task, confirm they pass
+
+**Quick** — Apply when ALL of these are true:
+- Task touches ≤2 files
+- No SEC-\* or TEST-\* references in the task entry
+- No test modifications required
+- Formalism level is NOT `formal` (formal always requires at least Standard)
+
+Quick verification requires:
+1. Run verify command if configured
+2. Confirm the change compiles/runs without errors
+
+**Standard** — All other tasks. Current verification behavior as defined in the
+Verification Checklist below.
+
+Include the tier in your TASK_COMPLETE signal (see Rule 9).
 
 ---
 

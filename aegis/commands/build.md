@@ -163,6 +163,18 @@ the build halts immediately instead of generating fix attempts.
 completed tasks (default: 5). The review checks traceability, security stubs,
 and test alignment. Set to 0 to disable checkpoint reviews.
 
+**`--security-context always|auto`** — control security context injection depth
+(default: `auto`).
+- `auto`: compact checklist for non-security tasks, full context for tasks
+  referencing SEC-PROP-*/SEC-REQ-*
+- `always`: full security context for every task (use for security-focused builds)
+
+**`--frontend-design`** — force frontend aesthetics guidelines into ALL task
+agent prompts, regardless of whether the task has UI-NNN references. Useful
+when building frontend tasks that trace to PROP-NNN entries without a
+ui-design.md artifact. When not set, aesthetics are auto-injected only for
+tasks with UI-NNN in their `Implements:` field.
+
 **`--parallel-mode agent|worktree`** — select how `[P]` parallel groups are
 executed (default: `agent`).
 - `agent` — uses Claude Code Agent tool with `isolation: "worktree"` for true
@@ -226,7 +238,9 @@ Where `<json>` is:
   "fixTaskMap": {},
   "reviewInterval": 5,
   "parallelMode": "agent",
-  "parallelActive": false
+  "parallelActive": false,
+  "frontendDesign": "auto",
+  "securityContext": "auto"
 }
 ```
 
@@ -239,6 +253,14 @@ If `--review-interval N` was specified, set `"reviewInterval": N` in the JSON.
 If `--review-interval 0` was specified, checkpoint reviews are disabled.
 
 If `--parallel-mode worktree` was specified, set `"parallelMode": "worktree"`.
+
+If `--frontend-design` was specified, set `"frontendDesign": "always"` in the JSON.
+Also check `.aegis/config.yaml` for `build.frontendDesign` — if set to `always`
+or `never`, use that value unless overridden by the `--frontend-design` flag.
+
+If `--security-context always` was specified, set `"securityContext": "always"`.
+Also check `.aegis/config.yaml` for `build.securityContext` — if set to `always`,
+use that value unless overridden by the `--security-context` flag.
 
 ---
 
@@ -315,11 +337,25 @@ If the user selected `--task` for a single task, skip this step.
        Design context:
        <===DESIGN_CONTEXT=== output for TASK-NNN>
 
+       UI design context:
+       <===UI_DESIGN_CONTEXT=== output for TASK-NNN>
+
+       Frontend aesthetics:
+       <===FRONTEND_DESIGN_CONTEXT=== output for TASK-NNN>
+
+       Security context:
+       <===SECURITY_CONTEXT=== output for TASK-NNN>
+
        Test context:
        <===TEST_CONTEXT=== output for TASK-NNN>
 
+       Build progress (learnings from prior tasks):
+       <last 80 lines of build-progress.md, or full file if shorter>
+
        Project: <project.name> | Stack: <project.stack> | Level: <formalism>
        Output dir: <output.dir>
+       Aegis home: <AEGIS_HOME>
+       Verify command: <build.verifyCommand or "none">
 
        Output <aegis:signal>TASK_COMPLETE</aegis:signal> with commit hash
        when verified.
@@ -339,6 +375,10 @@ If the user selected `--task` for a single task, skip this step.
    - Append all agents' progress entries to `build-progress.md`
    - Commit the merged `tasks.md` and `build-progress.md` updates
    - Advance the build state index past all parallel tasks
+   - **Clean up branches**: delete each agent branch after successful merge
+     (`git branch -d <branch>`). The Agent tool removes worktree directories
+     automatically, but branches must be deleted explicitly. Also run
+     `git worktree prune` to clear stale worktree references.
 
 7. Clear parallel active flag:
    ```bash
@@ -372,14 +412,32 @@ fall back to worktree mode with a warning message.
 
 For the first task in the queue, run the context extractor:
 
+Set environment variables based on build state before calling the context script:
+- If `frontendDesign` is `"always"`: set `FORCE_FRONTEND=1`
+- If `securityContext` is `"always"`: set `FORCE_SECURITY=1`
+
 ```bash
-bash "{AEGIS_HOME}/scripts/aegis-build-context.sh" "<output.dir>" "TASK-NNN"
+FORCE_FRONTEND=1 FORCE_SECURITY=1 bash "{AEGIS_HOME}/scripts/aegis-build-context.sh" "<output.dir>" "TASK-NNN"
 ```
+
+(Omit each `FORCE_*` variable when its corresponding setting is `"auto"`.)
 
 Parse the delimited output sections:
 - `===TASK_ENTRY===` — the full task specification
 - `===DESIGN_CONTEXT===` — referenced design properties and their details
+- `===UI_DESIGN_CONTEXT===` — referenced UI design specs from ui-design.md
+- `===FRONTEND_DESIGN_CONTEXT===` — aesthetic guidelines (auto-injected for
+  UI tasks, or forced via `--frontend-design` flag)
+- `===SECURITY_CONTEXT===` — security guidelines and checklist (always present,
+  depth varies: compact checklist for non-security tasks, full context for
+  tasks referencing SEC-PROP-*/SEC-REQ-* or when `--security-context always`)
 - `===TEST_CONTEXT===` — referenced test specifications (if tests.md exists)
+
+When constructing the agent prompt, omit `UI design context` and
+`Frontend aesthetics` sections if their content is a skip/not-found message
+(starts with `(`). This saves tokens for non-frontend tasks. The
+`Security context` section is always included (it contains at minimum the
+compact checklist).
 
 ---
 
@@ -401,7 +459,11 @@ learnings carry forward.
 
 ---
 
-### Step 7: Dispatch to build agent
+### Step 7: Dispatch to build agent (subagent)
+
+Every task — sequential or parallel — runs in a **subagent** with an isolated
+worktree. This keeps each task's context clean and prevents the coordinator's
+context window from filling with implementation details.
 
 Read the build agent definition:
 
@@ -415,41 +477,102 @@ If the current task has a mapping in `nativeTaskMap`, call `TaskUpdate` with
 `status: "in_progress"`. If `TaskUpdate` fails, record via `sync-fail` action
 and continue — sync failures are non-blocking.
 
-Dispatch to the build agent with the following inputs:
+**7.1 — Launch the subagent**
 
-- **task_id**: current task from the queue
-- **task_entry**: content from `===TASK_ENTRY===`
-- **design_context**: content from `===DESIGN_CONTEXT===`
-- **test_context**: content from `===TEST_CONTEXT===` (may be empty)
-- **project_name**: `project.name` from config
-- **stack**: `project.stack` from config
-- **level**: `formalism` from config
-- **output_dir**: `output.dir` from config
-- **aegis_home**: AEGIS_HOME resolved in Bootstrap
-- **progress**: contents of `<output.dir>/build-progress.md`
-- **iteration**: `taskIteration` from build state
+Dispatch a single Agent for the current task:
 
-Follow the build agent's rules to implement the task. The build agent defines:
-- File modification safety (Edit vs Write)
-- Commit discipline (one task = one commit)
-- Done marking (via `aegis-build-mark.sh`)
-- Signal protocol (`<aegis:signal>TASK_COMPLETE</aegis:signal>` with verification)
-- Progress tracking (append to `build-progress.md`)
-- Task modification requests (`<aegis:signal>TASK_MODIFICATION_REQUEST</aegis:signal>`)
+```
+Agent(
+  description: "Build TASK-NNN",
+  subagent_type: "general-purpose",
+  isolation: "worktree",
+  prompt: |
+    You are a build agent for the Aegis Framework. Implement TASK-NNN
+    following these rules:
 
-Do not implement tasks directly — follow the build agent's rules and signal
-protocol. The coordinator (this command) manages orchestration; the agent
-handles implementation.
+    <full build-agent.md content>
 
-The stop hook (`aegis-build-stop.sh`) manages the loop between tasks:
-- Running `build.verifyCommand` (if configured) and rejecting TASK_COMPLETE if it fails
-- Detecting `<aegis:signal>TASK_COMPLETE</aegis:signal>` and advancing to the next task
-- Feeding context for the next task back into the session
-- Handling `<aegis:signal>TASK_MODIFICATION_REQUEST</aegis:signal>` (advance on ADD_FOLLOWUP, retry on SPLIT_TASK/ADD_PREREQUISITE)
-- Retrying if completion signal is not produced within max iterations
-- Stopping after max iterations are exceeded
-- Detecting and blocking secret file commits
-- Detecting contradictions (claiming complete while also blocked)
+    Task context:
+    <===TASK_ENTRY=== output for TASK-NNN>
+
+    Design context:
+    <===DESIGN_CONTEXT=== output for TASK-NNN>
+
+    UI design context:
+    <===UI_DESIGN_CONTEXT=== output for TASK-NNN>
+
+    Frontend aesthetics:
+    <===FRONTEND_DESIGN_CONTEXT=== output for TASK-NNN>
+
+    Security context:
+    <===SECURITY_CONTEXT=== output for TASK-NNN>
+
+    Test context:
+    <===TEST_CONTEXT=== output for TASK-NNN>
+
+    Build progress (learnings from prior tasks):
+    <last 80 lines of build-progress.md, or full file if shorter>
+
+    Project: <project.name> | Stack: <project.stack> | Level: <formalism>
+    Output dir: <output.dir>
+    Aegis home: <AEGIS_HOME>
+    Iteration: <taskIteration>
+    Verify command: <build.verifyCommand or "none">
+
+    Output <aegis:signal>TASK_COMPLETE</aegis:signal> with commit hash
+    when verified, or describe the blocker if unable to complete.
+)
+```
+
+Wait for the agent to complete. The agent runs in its own worktree with a
+clean context — it will not pollute the coordinator's context window.
+
+**7.2 — Process agent result**
+
+Parse the agent's returned message:
+
+- **If `TASK_COMPLETE` signal found** with a commit hash:
+  1. Merge the agent's branch into the current branch:
+     `git merge <agent_branch> --no-edit`
+  2. If merge conflict occurs: abort merge, record the conflict, increment
+     `taskIteration` in build state, and retry (go back to Step 6) up to
+     `maxTaskIterations`. If max reached, stop and report.
+  3. On successful merge: clean up the agent branch
+     (`git branch -d <agent_branch>` and `git worktree prune`)
+  4. Advance build state: increment `taskIndex`, reset `taskIteration` to 1
+  5. Update native task status to `"completed"` if sync is enabled
+
+- **If `TASK_MODIFICATION_REQUEST` signal found**:
+  - `ADD_FOLLOWUP`: treat as complete (merge + advance), note the followup
+  - `SPLIT_TASK` or `ADD_PREREQUISITE`: do NOT merge, increment
+    `taskIteration`, retry with the proposed changes in the prompt
+
+- **If no signal found** (agent did not complete):
+  1. Increment `taskIteration` in build state
+  2. If `taskIteration <= maxTaskIterations`: retry (go back to Step 6)
+  3. If exceeded and `recoveryMode` is true: generate a fix attempt —
+     create a FIX task ID (`TASK-NNN-FIX-M`) and retry with recovery
+     context (up to 3 fix attempts)
+  4. If recovery exhausted or disabled: stop and report the stuck task
+
+- **If agent returned an error** (permission denied, tool failure):
+  Log a warning. Increment `taskIteration` and retry. If the Agent tool
+  is consistently unavailable (3 failures), fall back to inline execution
+  with the build agent rules (legacy behavior) and warn the user.
+
+**7.3 — Loop to next task**
+
+If there are more tasks in the queue (`taskIndex < len(taskQueue)`):
+1. Increment `globalIteration` in build state
+2. Check if checkpoint review is due (`globalIteration % reviewInterval == 0`)
+   — if so, run a lightweight review before continuing
+3. Go back to Step 6 to gather context for the next task
+
+If all tasks are done, proceed to Step 8.
+
+The stop hook (`aegis-build-stop.sh`) still runs between iterations to:
+- Detect if the user requested a stop (via `/stop` or manual interruption)
+- Provide a coordination checkpoint between task dispatches
 
 ---
 
@@ -458,27 +581,24 @@ The stop hook (`aegis-build-stop.sh`) manages the loop between tasks:
 After the build loop ends (either all tasks done or interrupted), perform
 these cleanup steps:
 
-**If parallel agents were used (agent mode):**
+**Always — clean up stale worktrees and branches (safety net):**
 
-Agent-mode merge happens inline in Step 5 after all agents complete. No
-additional merge step is needed here. The coordinator already merged branches,
-marked tasks done, and cleaned up worktrees (the Agent tool handles worktree
-cleanup automatically when using `isolation: "worktree"`).
+Run cleanup to remove any leftover worktrees and branches from this build,
+regardless of which parallel mode was used. This catches branches left behind
+by interrupted builds, agent-mode runs, or partial failures:
+```bash
+bash "{AEGIS_HOME}/scripts/aegis-build-worktree.sh" cleanup "aegis-build"
+```
 
-**If parallel worktrees were used (worktree mode):**
+**If parallel worktrees were used (worktree mode) and not yet merged:**
 
-Merge all worktree branches back:
+Merge all worktree branches back before cleanup:
 ```bash
 bash "{AEGIS_HOME}/scripts/aegis-build-worktree.sh" merge "aegis-build"
 ```
 
 If any merge conflicts occur, report them to the user and stop for manual
 resolution.
-
-After successful merge, clean up:
-```bash
-bash "{AEGIS_HOME}/scripts/aegis-build-worktree.sh" cleanup "aegis-build"
-```
 
 **Final native task sync** (if `nativeSyncEnabled` is true in build state):
 

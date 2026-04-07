@@ -9,7 +9,7 @@ description: >
 
 # Aegis Framework
 
-Generate and maintain four structured software design artifacts — **requirements**, **design**, **tasks**, and **tests** — from project input documents. Enforces bidirectional traceability, injects security requirements unconditionally, and produces TDD-ready test files.
+Generate and maintain five structured software design artifacts — **requirements**, **design**, **ui-design**, **tasks**, and **tests** — from project input documents. Enforces bidirectional traceability, injects security requirements unconditionally, and produces TDD-ready test files.
 
 ## Available Commands
 

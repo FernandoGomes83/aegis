@@ -97,6 +97,9 @@ if [ -n "$LAST_OUTPUT" ]; then
   elif echo "$LAST_OUTPUT" | grep -qE '(^|[[:space:]])TASK_COMPLETE([[:space:]]|$)'; then
     HAS_TASK_COMPLETE="yes"
   fi
+  # Extract verification tier from signal (quick|standard|thorough)
+  VERIFICATION_TIER=$(echo "$LAST_OUTPUT" | grep -oE 'tier:(quick|standard|thorough)' | head -1 | sed 's/tier://')
+  : "${VERIFICATION_TIER:=standard}"
   if echo "$LAST_OUTPUT" | grep -q '<aegis:signal>BUILD_COMPLETE</aegis:signal>'; then
     HAS_BUILD_COMPLETE="yes"
   elif echo "$LAST_OUTPUT" | grep -qE '(^|[[:space:]])BUILD_COMPLETE([[:space:]]|$)'; then
@@ -150,6 +153,25 @@ if [ "$HAS_TASK_COMPLETE" = "yes" ] && [ "$HAS_CONTRADICTION" = "no" ] && [ "$HA
       VERIFY_ESCAPED=$(echo "$VERIFY_OUTPUT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')
       echo "{\"decision\":\"block\",\"reason\":\"TASK_COMPLETE rejected for $CURRENT_TASK — verify command failed. The build must be green before a task can be marked done. Fix the errors and re-signal. Output: $VERIFY_ESCAPED\",\"systemMessage\":\"Verify failed for $CURRENT_TASK — fix errors before re-signaling\"}"
       exit 0
+    fi
+  fi
+
+  # --- 4e. Code quality pass ---
+  QUALITY_OUTPUT=$(bash "$SCRIPT_DIR/aegis-build-quality.sh" 2>/dev/null || true)
+  Q_CLEANED=$(echo "$QUALITY_OUTPUT" | grep '^CLEANED=' | sed 's/CLEANED=//')
+  if [ "${Q_CLEANED:-0}" -gt 0 ]; then
+    # Re-run verify command — quality pass must not break the build
+    if [ -n "${VERIFY_CMD:-}" ]; then
+      if ! eval "$VERIFY_CMD" >/dev/null 2>&1; then
+        # Quality pass broke something — revert all working tree changes
+        git checkout -- . 2>/dev/null || true
+        Q_CLEANED=0
+      fi
+    fi
+    # Amend the task commit to include cleaned files
+    if [ "${Q_CLEANED:-0}" -gt 0 ]; then
+      git add -u 2>/dev/null || true
+      git commit --amend --no-edit 2>/dev/null || true
     fi
   fi
 fi
@@ -208,6 +230,8 @@ if [ "$HAS_TASK_COMPLETE" = "yes" ] && [ "$HAS_CONTRADICTION" = "no" ] && [ "$HA
   if [ -z "$ACTIONABLE" ] || [ "$DONE_COUNT" = "$TOTAL" ]; then
     # All done
     bash "$SCRIPT_DIR/aegis-build-state.sh" "$STATE_PATH" deactivate >/dev/null 2>&1
+    # Clean up any leftover worktrees and branches
+    bash "$SCRIPT_DIR/aegis-build-worktree.sh" cleanup "aegis-build" >/dev/null 2>&1 || true
     echo "{\"decision\":\"block\",\"reason\":\"BUILD_COMPLETE: All $TOTAL tasks implemented ($DONE_COUNT/$TOTAL done). Run /aegis:validate for a full coverage report.\",\"systemMessage\":\"Build complete — $DONE_COUNT/$TOTAL tasks done.\"}"
     exit 0
   fi
@@ -235,7 +259,7 @@ if [ "$HAS_TASK_COMPLETE" = "yes" ] && [ "$HAS_CONTRADICTION" = "no" ] && [ "$HA
   fi
 
   # Build continuation prompt
-  PROMPT="Continue build — advancing to $NEXT_TASK ($((DONE_COUNT + 1))/$TOTAL).
+  PROMPT="Continue build — advancing to $NEXT_TASK ($((DONE_COUNT + 1))/$TOTAL). Previous task verified at tier:${VERIFICATION_TIER}.
 
 $CONTEXT_OUTPUT
 
@@ -247,8 +271,10 @@ $REVIEW_INSTRUCTION
 Follow the build-agent rules already loaded. Key reminders:
 - Implement this task completely, then mark done with aegis-build-mark.sh
 - One focused commit including tasks.md + build-progress.md
-- Output <aegis:signal>TASK_COMPLETE</aegis:signal> with commit hash when verified
-- SEC-PROP/SEC-REQ references require full implementation — never stub"
+- Determine verification tier per Rule 17 before signaling
+- Output <aegis:signal>TASK_COMPLETE</aegis:signal> tier:<tier> with commit hash when verified
+- SEC-PROP/SEC-REQ references require full implementation — never stub
+- Security checklist (§14) applies to ALL code — verify before signaling"
 
   # Escape for JSON
   PROMPT_ESCAPED=$(echo "$PROMPT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')
@@ -262,6 +288,7 @@ fi
 
 if [ "$HAS_CONTRADICTION" = "yes" ]; then
   bash "$SCRIPT_DIR/aegis-build-state.sh" "$STATE_PATH" deactivate >/dev/null 2>&1
+  bash "$SCRIPT_DIR/aegis-build-worktree.sh" cleanup "aegis-build" >/dev/null 2>&1 || true
   echo "{\"decision\":\"block\",\"reason\":\"Build stopped: task reported TASK_COMPLETE but also indicated it cannot be automated. Review the task manually.\",\"systemMessage\":\"Build halted — contradiction detected.\"}"
   exit 0
 fi
@@ -270,6 +297,7 @@ fi
 
 if [ "$HAS_SECRETS" = "yes" ]; then
   bash "$SCRIPT_DIR/aegis-build-state.sh" "$STATE_PATH" deactivate >/dev/null 2>&1
+  bash "$SCRIPT_DIR/aegis-build-worktree.sh" cleanup "aegis-build" >/dev/null 2>&1 || true
   echo "{\"decision\":\"block\",\"reason\":\"Build stopped: staged files contain potential secrets (.env, .pem, .key, credentials). Unstage sensitive files before continuing.\",\"systemMessage\":\"Build halted — secrets detected in staged files.\"}"
   exit 0
 fi
@@ -278,6 +306,8 @@ fi
 
 if [ "$HAS_BUILD_COMPLETE" = "yes" ]; then
   bash "$SCRIPT_DIR/aegis-build-state.sh" "$STATE_PATH" deactivate >/dev/null 2>&1
+  # Clean up any leftover worktrees and branches
+  bash "$SCRIPT_DIR/aegis-build-worktree.sh" cleanup "aegis-build" >/dev/null 2>&1 || true
   exit 0
 fi
 
@@ -297,6 +327,7 @@ if [ "$HAS_MODIFICATION" = "yes" ]; then
 
     if [ -z "$ACTIONABLE" ] || [ "$DONE_COUNT" = "$TOTAL" ]; then
       bash "$SCRIPT_DIR/aegis-build-state.sh" "$STATE_PATH" deactivate >/dev/null 2>&1
+      bash "$SCRIPT_DIR/aegis-build-worktree.sh" cleanup "aegis-build" >/dev/null 2>&1 || true
       echo "{\"decision\":\"block\",\"reason\":\"BUILD_COMPLETE: All $TOTAL tasks implemented ($DONE_COUNT/$TOTAL done). Followup tasks were proposed — add them to tasks.md and run /aegis:build again. Run /aegis:validate for coverage.\",\"systemMessage\":\"Build complete — $DONE_COUNT/$TOTAL tasks done (followup proposed).\"}"
       exit 0
     fi
@@ -369,6 +400,7 @@ if [ "$taskIteration" -gt "$maxTaskIterations" ]; then
 
   # No recovery or max fix attempts reached — deactivate
   bash "$SCRIPT_DIR/aegis-build-state.sh" "$STATE_PATH" deactivate >/dev/null 2>&1
+  bash "$SCRIPT_DIR/aegis-build-worktree.sh" cleanup "aegis-build" >/dev/null 2>&1 || true
   FIX_NOTE=""
   ATTEMPTS=$(echo "$CHECK_OUTPUT" | grep '^ATTEMPTS=' | sed 's/ATTEMPTS=//')
   if [ -n "$ATTEMPTS" ] && [ "$ATTEMPTS" -gt "0" ] 2>/dev/null; then

@@ -146,6 +146,80 @@ This step is **non-blocking**. If WebSearch is unavailable or returns no useful 
 
 ---
 
+## Step 2.8: Interview Mode (when enabled)
+
+Check if interview mode should activate:
+
+1. **Explicit flag:** If the user ran `/aegis:requirements --interview` → activate. Parse `--depth=<profile>` if present (default: `standard`).
+2. **Config flag:** If `.aegis/config.yaml` contains `requirements.interview: true` or `requirements.interview.enabled: true` → activate. Read `requirements.interview.depth` for the depth profile (default: `standard`).
+3. **Auto-detection:** If neither flag is set, estimate input quality from Step 2:
+   - Count total words across all input documents.
+   - Check for presence of key sections: goals/objectives, users/actors, constraints, scope boundaries.
+   - If total words < 200 OR 2+ key sections are missing → **suggest** interview mode (do not auto-activate).
+
+### When auto-detection triggers
+
+Display to the user:
+
+> Input appears to be a brief sketch (~N words, missing: [list of missing sections]). I recommend running interview mode to clarify scope and constraints before generating requirements. Proceed with interview? (The alternative is to generate requirements from what's available, with assumptions marked.)
+
+Wait for user response. If they decline, proceed to Step 3 — the requirements agent will mark inferred decisions with `[ASSUMED]` tags (see Rule 10 in the agent).
+
+### When interview mode is active
+
+1. Read `{AEGIS_HOME}/shared/interview-dimensions.md` for dimension definitions, scoring criteria, question strategies, and depth profiles.
+
+2. **Score each dimension** from the input documents:
+   - For each of the 5 dimensions (Intent, Scope, Users, Constraints, Success Criteria), assign an initial clarity score based on what the input docs contain:
+     - Dimension mentioned with specifics → 0.8–1.0
+     - Dimension mentioned vaguely → 0.4–0.6
+     - Dimension not mentioned → 0.0–0.2
+
+3. **Compute initial ambiguity:**
+   ```
+   weighted_avg = (intent × 0.25) + (scope × 0.25) + (users × 0.20)
+                + (constraints × 0.15) + (success_criteria × 0.15)
+   ambiguity = 1.0 − weighted_avg
+   ```
+
+4. **Display initial assessment:**
+   ```
+   Input ambiguity: 0.XX — interview active (depth: <profile>, max rounds: <N>)
+
+   Dimension scores:
+     Intent:           0.X
+     Scope:            0.X
+     Users:            0.X
+     Constraints:      0.X
+     Success criteria:  0.X
+   ```
+
+5. **Run interview loop:**
+   - Look up the depth profile to get `max_rounds` and `threshold` (quick: 3/0.35, standard: 8/0.25, deep: 15/0.15).
+   - While ambiguity > threshold AND rounds < max_rounds:
+     a. Pick the dimension with the **lowest clarity score**.
+     b. Select the next question from that dimension's pressure ladder (see interview-dimensions.md).
+     c. Ask **ONE focused question**. Do not batch multiple questions.
+     d. Wait for the user's response.
+     e. Update the dimension's clarity score based on answer quality.
+     f. Re-compute overall ambiguity.
+     g. If the user gives non-informative answers for the same dimension twice, stop asking about it and move to the next.
+   - If the user says they want to skip or stop the interview at any point, respect immediately and proceed with what has been clarified so far.
+
+6. **Readiness gates:** After the loop completes, check:
+   - Has at least one **non-goal** been explicitly stated?
+   - Has at least one **success criterion** been explicitly stated?
+   - If either is missing, ask the user directly: "Before I generate requirements, I need to confirm: (1) What is explicitly NOT in scope? (2) How will you know this is working correctly?"
+   - If the user declines, mark both as `[ASSUMED]`.
+
+7. **Compile interview context:** Assemble `interview_context` following the output format in interview-dimensions.md. This is passed to the requirements agent in Step 6.
+
+### When interview mode is NOT active
+
+Set `interview_context` to an empty string and proceed to Step 3.
+
+---
+
 ## Step 3: Load Security Requirements
 
 Read `aegis/framework/security/security-requirements.yaml`.
@@ -200,6 +274,7 @@ Dispatch to `aegis/agents/requirements-agent.md` with the following context pack
 - **level_rules** — the level rules loaded in Step 1, specifically the requirements format section.
 - **project_name** — from `.aegis/config.yaml`.
 - **research_context** — compiled research summaries for domain terms, products, or technologies that were unknown or uncertain to the model (Step 2.5). May be an empty string if no unknown terms were found or WebSearch was unavailable.
+- **interview_context** — compiled interview clarifications from Step 2.8, structured as dimension: answer pairs. May be an empty string if interview mode was not active. When non-empty, the agent must use these clarifications as primary context and apply `[ASSUMED]` marking per Rule 10.
 
 The agent must produce a complete `requirements.md` artifact. Instruct the agent to:
 
@@ -207,7 +282,8 @@ The agent must produce a complete `requirements.md` artifact. Instruct the agent
 - Include a `Derives from: <input-doc-filename>` citation in every REQ-NNN entry.
 - Append a dedicated **Security Requirements** section containing all SEC-REQ entries from the filtered set, using the `SEC-REQ-<KEY>` IDs as defined in `security-requirements.yaml`.
 - Apply the formalism level rules: use the requirements format (user stories, acceptance criteria depth, glossary) specified in `aegis/framework/levels/<level>.md`.
-- Include an artifact header with: project name, generation date (2026-04-04), formalism level, and language.
+- Include an artifact header with: project name, generation date, formalism level, and language.
+- If interview mode was active, include a metadata comment after the artifact header: `<!-- Generated with interview mode (<depth_profile>, <rounds> rounds, ambiguity: <final_ambiguity>) -->`
 
 Write the output to `.aegis/requirements.md` (relative to the project root, using the `output.dir` from `.aegis/config.yaml`, defaulting to `.aegis/`).
 
@@ -244,6 +320,8 @@ requirements.md generated.
   Security requirements   : <M> (SEC-REQ-*)
   Input docs processed    : <K>
   Terms researched        : <R> (or "none needed")
+  Interview mode          : <depth profile, N rounds, ambiguity: 0.XX> (or "not used")
+  Assumed items           : <N> [ASSUMED] tags (or "none")
   Formalism level         : <light|standard|formal>
   Validation              : <PASSED | PASSED WITH WARNINGS | FAILED — see Validation Notes>
 

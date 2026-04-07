@@ -11,7 +11,7 @@ Aegis is a Claude Code skill (slash-command framework) that generates structured
 The repo has two layers:
 
 - **Layer 1 — Framework** (`aegis/framework/`): Tool-agnostic spec. Markdown templates, YAML configs, security baselines, and validation rules. Can be used without Claude Code.
-- **Layer 2 — Skill** (`aegis/commands/`, `aegis/agents/`, `aegis/shared/`, `aegis/scripts/`): Claude Code automation. Commands are slash-command definitions (`/aegis:*`), agents are dispatched by commands to generate artifacts, shared modules provide cross-cutting context (preamble, context7 lookup), scripts handle parsing/state/context to minimize token usage.
+- **Layer 2 — Skill** (`aegis/commands/`, `aegis/agents/`, `aegis/shared/`, `aegis/scripts/`): Claude Code automation. Commands are slash-command definitions (`/aegis:*`), agents are dispatched by commands to generate artifacts, shared modules provide cross-cutting context (preamble, context7 lookup, design critic, frontend aesthetics, interview dimensions), scripts handle parsing/state/context to minimize token usage.
 
 The installer (`bin/install.mjs`) copies `aegis/` into the user's `.claude/aegis/` directory and creates command files in `.claude/commands/`. It also makes shell scripts executable.
 

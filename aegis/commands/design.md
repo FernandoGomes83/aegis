@@ -127,7 +127,7 @@ Only ask about decisions that are both unanswered and relevant. If all decisions
 
 ## Step 5 — Generate design.md
 
-Dispatch to `aegis/agents/design-agent.md` with the following inputs:
+Dispatch to `aegis/agents/design-agent.md` in **generation mode** with the following inputs:
 
 - **requirements_content**: full text of `requirements.md`
 - **stack_config**: the stack section from `.aegis/config.yaml` plus any answers from Step 4
@@ -153,6 +153,65 @@ The agent must write a complete `design.md` that:
 8. **Includes Security Properties** (SEC-PROP-*) — the filtered set from Step 2, placed in the auto-generated section at the end.
 
 The output file path is `<output.dir>/design.md` (default: `.aegis/design.md`).
+
+---
+
+## Step 5.5 — Design Review (Critic Pass)
+
+Determine whether the review step should run:
+
+1. Read `design.review` from `.aegis/config.yaml` (if present).
+2. Apply defaults based on formalism level:
+   - `light` → review defaults to `false`
+   - `standard` → review defaults to `true`
+   - `formal` → review defaults to `true`
+3. An explicit `design.review: true` or `design.review: false` in config overrides the default.
+
+**If review is disabled**, skip this step entirely and proceed to Step 6.
+
+**If review is enabled:**
+
+1. Read `{AEGIS_HOME}/shared/design-critic.md` — this contains the critic prompt template with evaluation dimensions and scoring criteria.
+
+2. Apply the critic evaluation to the generated `design.md`, providing:
+   - **design_content**: full text of the just-generated `design.md`
+   - **requirements_content**: full text of `requirements.md`
+   - **formalism_level**: the configured formalism level
+   - **req_ids**: list of all REQ-NNN IDs extracted in Step 3
+   - **sec_req_ids**: list of all SEC-REQ-* IDs extracted in Step 3
+
+3. Produce the structured review output as specified in `design-critic.md`.
+
+4. Parse the verdict:
+
+   - **APPROVE** → Append a `## Design Review Summary` section to `design.md` with the scores table and verdict. Proceed to Step 6.
+
+   - **REVISE** → Feed the must-fix issues back to the design agent in **revision mode** (see `aegis/agents/design-agent.md`, Revision Mode section). The agent applies targeted fixes to the listed issues only — it does not rewrite the entire design. After revision, append a `## Design Review Summary` section to `design.md` that includes both the original scores and a note that revisions were applied.
+
+### Design Review Summary format (appended to design.md)
+
+```markdown
+---
+
+## Design Review Summary
+
+**Verdict:** {APPROVE | REVISED}
+**Reviewed against:** requirements.md ({REQ-001 through REQ-NNN}, {SEC-REQ-* list})
+
+| Dimension | Score |
+|-----------|-------|
+| Requirement coverage | N/5 |
+| Security completeness | N/5 |
+| Architectural coherence | N/5 |
+| Traceability integrity | N/5 |
+| Implementability | N/5 |
+| Proportionality | N/5 |
+
+{If REVISED: "Revisions applied to address N must-fix issues."}
+{If APPROVE: "No must-fix issues found."}
+```
+
+This section is informational — downstream commands can see that the design was reviewed but do not alter their behavior based on it.
 
 ---
 
@@ -191,6 +250,7 @@ Summary:
   PROP-NNN count:   <N>
   SEC-PROP count:   <N>
   Documentation:    <N libraries via Context7 | N libraries via WebSearch | lookup skipped>
+  Design review:    <APPROVE | REVISED | skipped>
   Validation:       <PASS | PASS with warnings | GAPS FOUND>
 
 Warnings (if any):

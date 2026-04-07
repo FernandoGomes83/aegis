@@ -51,6 +51,11 @@ generation_date: <YYYY-MM-DD>
 research_context: <string>       # Compiled research summaries for domain terms,
                                  # products, or technologies that were unknown or
                                  # uncertain to the model. May be empty.
+
+interview_context: <string>      # Compiled interview clarifications structured as
+                                 # dimension: answer pairs. Non-empty when interview
+                                 # mode was active. Dimensions marked [ASSUMED] in
+                                 # this context must carry through to requirements.
 ```
 
 ---
@@ -146,6 +151,34 @@ not anticipated by the input, add a `<!-- REVIEW: <description> -->` comment
 noting the constraint discovered during research. When `research_context` is
 empty, proceed with training knowledge only — this is not an error state.
 
+**Rule 10 — Mark assumptions with `[ASSUMED]` tags.**
+When `interview_context` is non-empty, use the interview clarifications as
+**primary context** for the corresponding dimensions. Any dimension marked
+`[ASSUMED]` in `interview_context` means the user did not clarify it — the
+agent must infer from input documents and mark every REQ-NNN derived from
+that inference with an `[ASSUMED]` tag. Format:
+
+```
+- REQ-003: User authentication via OAuth 2.0 [ASSUMED — no auth method specified]
+```
+
+The tag goes at the end of the requirement title/description line. The bracketed
+note must briefly state what was inferred and why (what information was missing).
+
+When `interview_context` is empty (interview mode was not active) AND the
+dispatching command indicates that interview was suggested but declined, apply
+the same `[ASSUMED]` treatment to **all** inferences where the input docs did
+not provide enough detail for a testable criterion. This makes assumptions
+visible for review.
+
+When `interview_context` is empty and interview was never suggested (input was
+thorough), do not add `[ASSUMED]` tags — use Rule 6's `<!-- REVIEW -->` comments
+for genuinely missing information instead.
+
+Dimensions that were clarified during the interview (score ≥ 0.8) do NOT get
+`[ASSUMED]` tags — their answers are treated as authoritative input equivalent
+to the original documents.
+
 ---
 
 ## Output
@@ -157,6 +190,10 @@ Replace every `{{placeholder}}` in the template with real content. The final
 file must contain:
 
 1. **Artifact header** — project name, generation date, and formalism level.
+   If `interview_context` is non-empty, add a metadata comment immediately
+   after the header: `<!-- Generated with interview mode (<depth>, <rounds> rounds, ambiguity: <score>) -->`.
+   Extract the depth profile, round count, and final ambiguity from the
+   interview context header.
 2. **Introduction** — one to four paragraphs (depth scales with level)
    describing the system, its primary actors, key constraints, and (at formal
    level) explicit out-of-scope statements.
@@ -214,6 +251,7 @@ After writing `requirements.md`, return the following structured summary to the
     "total": N
   },
   "flagged_items": N,
+  "assumed_items": N,
   "input_docs_processed": N,
   "formalism_level": "<light|standard|formal>",
   "validation": {
@@ -225,3 +263,6 @@ After writing `requirements.md`, return the following structured summary to the
 
 `flagged_items` is the count of `<!-- REVIEW -->` comments inserted into the
 output. If zero, omit the field or set it to 0.
+
+`assumed_items` is the count of `[ASSUMED]` tags in the output. If zero, omit
+the field or set it to 0.

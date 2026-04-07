@@ -92,9 +92,18 @@ case "$ACTION" in
 
     REMOVED=0
 
-    # Remove worktrees
+    # Remove worktrees created by aegis (legacy worktree mode)
     if [ -d "$WORKTREE_DIR" ]; then
       for wt_dir in "$WORKTREE_DIR"/TASK-*; do
+        [ -d "$wt_dir" ] || continue
+        git worktree remove "$wt_dir" --force 2>/dev/null && REMOVED=$((REMOVED + 1)) || true
+      done
+    fi
+
+    # Remove worktrees created by Agent tool (isolation: "worktree")
+    # Agent tool creates worktrees under .worktrees/ with generated names
+    if [ -d "$WORKTREE_DIR" ]; then
+      for wt_dir in "$WORKTREE_DIR"/*/; do
         [ -d "$wt_dir" ] || continue
         git worktree remove "$wt_dir" --force 2>/dev/null && REMOVED=$((REMOVED + 1)) || true
       done
@@ -103,7 +112,7 @@ case "$ACTION" in
     # Prune stale worktree references
     git worktree prune 2>/dev/null || true
 
-    # Delete branches matching the prefix
+    # Delete branches matching the build prefix
     BRANCHES_DELETED=0
     for branch in $(git branch --list "${BRANCH_PREFIX}-*" | sed 's/^[* ]*//' | tr -d ' '); do
       if git branch -d "$branch" 2>/dev/null; then
@@ -111,6 +120,16 @@ case "$ACTION" in
         echo "DELETED_BRANCH=$branch"
       else
         # Force delete if not fully merged (user chose to cleanup)
+        git branch -D "$branch" 2>/dev/null && BRANCHES_DELETED=$((BRANCHES_DELETED + 1)) || true
+      fi
+    done
+
+    # Delete branches created by Agent tool worktrees (claude-worktree-* pattern)
+    for branch in $(git branch --list "claude-worktree-*" | sed 's/^[* ]*//' | tr -d ' '); do
+      if git branch -d "$branch" 2>/dev/null; then
+        BRANCHES_DELETED=$((BRANCHES_DELETED + 1))
+        echo "DELETED_BRANCH=$branch"
+      else
         git branch -D "$branch" 2>/dev/null && BRANCHES_DELETED=$((BRANCHES_DELETED + 1)) || true
       fi
     done

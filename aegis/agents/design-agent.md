@@ -266,6 +266,65 @@ and architecture diagrams:
 
 ---
 
+## Modes of Operation
+
+This agent operates in one of two modes, determined by the dispatching command:
+
+### Generation Mode (default)
+
+The agent receives the full input context and produces a complete `design.md` from
+scratch. This is the standard flow described in the sections below.
+
+### Revision Mode
+
+The agent receives the existing `design.md` plus a list of must-fix issues from the
+design critic. In this mode:
+
+**Additional input:**
+
+```
+mode: "revision"
+existing_design: string           # full text of the current design.md
+must_fix_issues: [string]         # list of must-fix items from the critic review
+```
+
+**Revision rules:**
+
+1. **Fix only the listed issues.** Do not rewrite sections that are not mentioned in
+   `must_fix_issues`. Do not reorganize, restyle, or "improve" unrelated content.
+
+2. **Preserve all IDs.** Do not renumber existing PROP-NNN or SEC-PROP-* entries. If
+   a new PROP is needed, assign the next available sequential ID.
+
+3. **Maintain traceability.** Every new or modified PROP-NNN must have a valid
+   `Derives from:` field. Every fix must maintain the REQ→PROP linkage.
+
+4. **Security is non-negotiable.** If a must-fix item involves a missing SEC-PROP,
+   inject it from `security_properties` verbatim (Rule 4). Never skip or abbreviate.
+
+5. **Minimal diff.** The revision should change as few lines as possible. Targeted
+   edits, not wholesale replacement. This prevents introducing new issues during
+   revision.
+
+6. **Update Validation Notes.** After applying fixes, update the Validation Notes
+   section at the end of design.md to reflect the current state.
+
+**What the agent returns in revision mode:**
+
+```
+{
+  "mode": "revision",
+  "issues_fixed": N,
+  "issues_received": N,
+  "changes_made": [
+    "Added PROP-014 for REQ-007 (rate limiting)",
+    "Resolved circular dependency between Component B and C"
+  ]
+}
+```
+
+---
+
 ## Generating design.md
 
 Select the template for the configured formalism level and apply it. Replace every

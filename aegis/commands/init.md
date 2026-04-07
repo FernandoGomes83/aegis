@@ -276,6 +276,30 @@ Tip — Context7 documentation lookup:
   as-is, Aegis will use WebSearch as fallback — no action required.
 ```
 
+Then display the status line tip:
+
+```
+Tip — Build progress in status line:
+
+  Aegis can show live build progress (current task, completion count) in
+  Claude Code's status line. To enable it, add this to your
+  .claude/settings.json:
+
+    {
+      "hooks": {
+        "StatusLine": [
+          {
+            "type": "command",
+            "command": "bash .claude/aegis/scripts/aegis-build-statusline.sh"
+          }
+        ]
+      }
+    }
+
+  The status line is only visible during an active build — it shows
+  nothing when no build is running.
+```
+
 Then display the next step:
 
 ```
